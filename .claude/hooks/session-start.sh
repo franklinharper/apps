@@ -16,13 +16,22 @@ BIN_DIR="$HOME/.local/bin"
 cd "$REPO_DIR"
 git submodule update --init --recursive
 
-# Compute hash of sources that affect the JAR output:
-#   src/ files + build.gradle.kts + submodule commit
+# Compute hash of sources that affect the JAR output.
+# Must match the algorithm in build.gradle.kts generateWrapper exactly:
+#   - sha256(content) + "  " + relative-path  for each src/ file (sorted)
+#   - sha256(content) + "  build.gradle.kts"
+#   - submodule-commit + "  kmp-web-wizard"
+# then sha256 of all those lines concatenated.
 compute_source_hash() {
   {
-    find "$KMP_DIR/src" -type f | sort | xargs sha256sum 2>/dev/null
-    sha256sum "$KMP_DIR/build.gradle.kts"
-    cd "$KMP_DIR/kmp-web-wizard" && git rev-parse HEAD
+    find "$KMP_DIR/src" -type f | sort | while IFS= read -r f; do
+      hash=$(sha256sum "$f" | cut -d' ' -f1)
+      echo "$hash  ${f#$KMP_DIR/}"
+    done
+    hash=$(sha256sum "$KMP_DIR/build.gradle.kts" | cut -d' ' -f1)
+    echo "$hash  build.gradle.kts"
+    subhash=$(cd "$KMP_DIR/kmp-web-wizard" && git rev-parse HEAD)
+    echo "$subhash  kmp-web-wizard"
   } | sha256sum | cut -c1-64
 }
 
@@ -34,10 +43,7 @@ if [ "$CURRENT_HASH" = "$STORED_HASH" ] && [ -f "$DIST_JAR" ]; then
 else
   echo "kmp-app-generator: source changed (or first run), rebuilding..."
   cd "$KMP_DIR"
-  gradle generateWrapper
-  cp "$KMP_DIR/build/libs/kmp-app-generator-all.jar" "$KMP_DIR/dist/"
-  echo "$CURRENT_HASH" > "$STORED_HASH_FILE"
-  echo "kmp-app-generator: dist/ updated"
+  gradle generateWrapper   # also updates dist/ and dist/source.hash
 fi
 
 # Install into ~/.local/bin

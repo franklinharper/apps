@@ -110,13 +110,15 @@ git add kmp-web-wizard
 git commit -m "chore: update kmp-web-wizard submodule"
 ```
 
-Then rebuild and update the pre-built cache:
+Then rebuild:
 
 ```bash
 gradle generateWrapper
-cp build/libs/kmp-app-generator-all.jar dist/
-# recompute the hash
-{ find src -type f | sort | xargs sha256sum; sha256sum build.gradle.kts; cd kmp-web-wizard && git rev-parse HEAD; } | sha256sum | cut -c1-64 > dist/source.hash
+```
+
+`generateWrapper` automatically copies the new JAR to `dist/` and rewrites `dist/source.hash`, so just commit the result:
+
+```bash
 git add dist/
 git commit -m "chore: update dist/ after wizard bump"
 ```
