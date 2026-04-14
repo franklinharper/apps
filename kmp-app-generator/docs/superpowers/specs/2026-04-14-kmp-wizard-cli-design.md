@@ -87,7 +87,13 @@ All changes are in `build.gradle.kts`:
    ```
 3. Add the `com.github.johnrengelman.shadow` plugin and configure a `shadowJar` task:
    - Main class: `cli.MainKt`
-   - Output artifact: `kmp-app-generator.jar`
+   - Output artifact: `kmp-app-generator-all.jar`
+4. Add a Gradle task that generates a `kmp-app-generator` wrapper shell script alongside the JAR:
+   ```bash
+   #!/bin/bash
+   exec java -jar "$(dirname "$0")/kmp-app-generator-all.jar" "$@"
+   ```
+   The script is made executable as part of the task.
 
 ## Out of Scope
 
