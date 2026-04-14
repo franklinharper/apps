@@ -77,6 +77,9 @@ kmp-app-generator ~/projects/my-app --no-android --no-ios --no-web --no-tests
 kmp-app-generator/
 ├── build.gradle.kts          # Gradle build: shadow JAR + wrapper task
 ├── settings.gradle.kts
+├── dist/
+│   ├── kmp-app-generator-all.jar  # Pre-built fat JAR (committed)
+│   └── source.hash                # Hash of sources when JAR was built
 ├── kmp-web-wizard/           # git submodule — upstream generation logic
 │   └── src/commonMain/       # wired into this project's main source set
 └── src/
@@ -107,8 +110,29 @@ git add kmp-web-wizard
 git commit -m "chore: update kmp-web-wizard submodule"
 ```
 
-Then rebuild:
+Then rebuild and update the pre-built cache:
 
 ```bash
 gradle generateWrapper
+cp build/libs/kmp-app-generator-all.jar dist/
+# recompute the hash
+{ find src -type f | sort | xargs sha256sum; sha256sum build.gradle.kts; cd kmp-web-wizard && git rev-parse HEAD; } | sha256sum | cut -c1-64 > dist/source.hash
+git add dist/
+git commit -m "chore: update dist/ after wizard bump"
 ```
+
+## Claude Code session hook
+
+`.claude/settings.json` registers a `SessionStart` hook (`.claude/hooks/session-start.sh`) that runs automatically when you open this repo in a remote Claude Code session ([claude.ai/code](https://claude.ai/code)).
+
+**What it does:**
+
+1. Initialises the `kmp-web-wizard` submodule
+2. Computes a hash of `src/`, `build.gradle.kts`, and the submodule commit
+3. Compares it against `dist/source.hash`
+   - **Hash matches** → copies `dist/kmp-app-generator-all.jar` directly (no Gradle, fast)
+   - **Hash differs** → runs `gradle generateWrapper`, updates `dist/` for next time
+4. Writes a wrapper script and installs both to `~/.local/bin`
+5. Adds `~/.local/bin` to `PATH` for the session
+
+After the hook completes, `kmp-app-generator` is available in every terminal tab for that session.
