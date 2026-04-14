@@ -9,6 +9,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import wizard.BinaryFile
+import wizard.DefaultComposeAppInfo
 import wizard.ProjectInfo
 import wizard.ProjectPlatform
 import wizard.WizardType
@@ -48,28 +49,26 @@ class KmpAppGenerator : CliktCommand("kmp-app-generator") {
             if (android) add(ProjectPlatform.Android)
             if (ios) add(ProjectPlatform.Ios)
             if (desktop) add(ProjectPlatform.Jvm)
-            if (web) {
-                add(ProjectPlatform.Wasm)
-                add(ProjectPlatform.Js)
-            }
+            if (web) add(ProjectPlatform.Wasm)
         }
         if (platforms.isEmpty()) {
             throw UsageError("At least one platform must be selected (see --help)")
         }
 
+        // Order matches DefaultComposeAppInfo — generator writes plugins in iteration order
         val dependencies = buildSet {
             add(KotlinMultiplatformPlugin)
+            if (android) {
+                add(KotlinAndroidPlugin)
+                add(AndroidKmpLibraryPlugin)
+            }
+            if (desktop) add(KotlinJvmPlugin)
             add(ComposeCompilerPlugin)
             add(ComposeMultiplatformPlugin)
             addAll(DefaultComposeLibraries)
             if (android) {
-                add(KotlinAndroidPlugin)
                 add(AndroidApplicationPlugin)
-                add(AndroidKmpLibraryPlugin)
                 add(AndroidxActivityCompose)
-            }
-            if (desktop) {
-                add(KotlinJvmPlugin)
             }
         }
 
