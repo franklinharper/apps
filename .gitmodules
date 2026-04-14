@@ -1,0 +1,3 @@
+[submodule "kmp-app-generator/kmp-web-wizard"]
+	path = kmp-app-generator/kmp-web-wizard
+	url = https://github.com/terrakok/kmp-web-wizard.git
