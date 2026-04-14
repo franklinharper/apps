@@ -12,16 +12,27 @@ repositories {
 
 dependencies {
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
-    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13.2")
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnit()
 }
 
 kotlin {
     jvmToolchain(21)
+}
+
+sourceSets {
+    main {
+        kotlin {
+            srcDir("kmp-web-wizard/src/commonMain/kotlin")
+        }
+        resources {
+            srcDir("kmp-web-wizard/src/commonMain/resources")
+        }
+    }
 }
 
 tasks.shadowJar {
