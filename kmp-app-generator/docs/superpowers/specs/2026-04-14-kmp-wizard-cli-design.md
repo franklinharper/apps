@@ -1,19 +1,20 @@
-# KMP Wizard CLI — Design Spec
+# kmp-app-generator CLI — Design Spec
 
 **Date:** 2026-04-14  
 **Status:** Approved
 
 ## Overview
 
-Add a JVM CLI to the `terrakok/kmp-web-wizard` open source project via a pull request. The CLI reuses the existing `commonMain` Kotlin generation logic to produce Kotlin Multiplatform project files directly on disk, without requiring a browser or a server.
+Build a JVM CLI (`kmp-app-generator`) that reuses the generation logic from `terrakok/kmp-web-wizard` (Apache 2.0) to produce Kotlin Multiplatform project files directly on disk, without requiring a browser or a server. The CLI will be validated internally before any upstream PR is considered.
 
 ## Key Decisions
 
 - **No server API exists.** The web wizard is 100% client-side (JSZip + FileSaver.js). The generation logic lives in `commonMain` and already runs on JVM (there are JVM tests).
-- **Target repo:** `terrakok/kmp-web-wizard` (Apache 2.0 license)
-- **Scope:** Compose App only (KMP Library support is out of scope for this PR)
-- **Distribution:** Fat JAR (`java -jar kmp-wizard.jar`). Java 21 is confirmed available in the target environment.
+- **Source:** `terrakok/kmp-web-wizard` generator code (Apache 2.0 license), vendored or included as a source dependency
+- **Scope:** Compose App only (KMP Library support is out of scope)
+- **Distribution:** Fat JAR (`java -jar kmp-app-generator.jar`). Java 21 is confirmed available in the target environment.
 - **Invocation:** Flags only — no interactive mode.
+- **Upstream PR:** Deferred — tool will be validated internally first.
 
 ## Architecture
 
@@ -35,7 +36,7 @@ No changes to `commonMain` or `jsMain`.
 ## CLI Interface
 
 ```
-Usage: kmp-wizard <output-folder> [OPTIONS]
+Usage: kmp-app-generator <output-folder> [OPTIONS]
 
 Arguments:
   output-folder   Directory to create (must not already exist)
@@ -86,7 +87,7 @@ All changes are in `build.gradle.kts`:
    ```
 3. Add the `com.github.johnrengelman.shadow` plugin and configure a `shadowJar` task:
    - Main class: `cli.MainKt`
-   - Output artifact: `kmp-wizard.jar`
+   - Output artifact: `kmp-app-generator.jar`
 
 ## Out of Scope
 
