@@ -28,7 +28,7 @@ class AppActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // Compose state — starts null (shows step-1 coaching immediately).
-        // Updated asynchronously once Claude parses the shared screenshot.
+        // Updated asynchronously once ML Kit parses the shared screenshot.
         var puzzle by mutableStateOf<PuzzleResult?>(null)
 
         @Suppress("DEPRECATION")
@@ -40,8 +40,7 @@ class AppActivity : ComponentActivity() {
         if (imageUri != null) {
             lifecycleScope.launch {
                 puzzle = withContext(Dispatchers.IO) {
-                    WordleImageParser(this@AppActivity, BuildConfig.ANTHROPIC_API_KEY)
-                        .parse(imageUri)
+                    WordleImageParser(this@AppActivity).parse(imageUri)
                 }
             }
         }

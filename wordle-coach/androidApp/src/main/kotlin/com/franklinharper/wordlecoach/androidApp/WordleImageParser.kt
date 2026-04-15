@@ -1,163 +1,177 @@
 package com.franklinharper.wordlecoach.androidApp
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.Rect
 import android.net.Uri
-import android.util.Base64
 import android.util.Log
-import com.anthropic.client.AnthropicClient
-import com.anthropic.client.okhttp.AnthropicOkHttpClient
-import com.anthropic.models.messages.Base64ImageSource
-import com.anthropic.models.messages.ContentBlockParam
-import com.anthropic.models.messages.ImageBlockParam
-import com.anthropic.models.messages.MessageCreateParams
-import com.anthropic.models.messages.Model
-import com.anthropic.models.messages.TextBlockParam
+import com.google.android.gms.tasks.Tasks
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.franklinharper.wordlecoach.domain.CompletedGuess
 import com.franklinharper.wordlecoach.domain.GuessedTile
 import com.franklinharper.wordlecoach.domain.LetterResult
 import com.franklinharper.wordlecoach.domain.PuzzleResult
-import org.json.JSONObject
+import kotlin.math.abs
 
 private const val TAG = "WordleImageParser"
 
 /**
- * Parses a Wordle screenshot into a [PuzzleResult] by sending the image to the Claude API
- * (vision) and asking Claude to read the tile letters and colours.
+ * Parses a Wordle screenshot into a [PuzzleResult] entirely on-device:
  *
- * Requires [apiKey] to be set; configure it via `anthropic.api.key` in `local.properties`.
+ * 1. ML Kit Text Recognition (Latin, via Google Play Services) reads each letter and
+ *    its bounding box.
+ * 2. Pixel-colour analysis classifies each tile as Correct / Present / Absent using
+ *    HSV thresholds tuned for the NYT Wordle light- and dark-mode palette.
+ * 3. Tiles are grouped into rows; only 5-tile rows (grid guesses) are kept —
+ *    coloured keyboard keys have 7–10 keys per row, so they are filtered out.
+ *
+ * No internet connection or API key required.
+ *
+ * **Call [parse] on a background thread** — ML Kit's [Tasks.await] blocks.
  */
-class WordleImageParser(private val context: Context, private val apiKey: String) {
+class WordleImageParser(private val context: Context) {
 
-    /**
-     * Calls the Claude API with the image at [imageUri] and returns a parsed [PuzzleResult],
-     * or `null` if the key is missing, the image can't be read, or Claude's response can't be
-     * understood.
-     *
-     * This is a **blocking** call — always invoke it on a background thread
-     * (e.g. `withContext(Dispatchers.IO)`).
-     */
     fun parse(imageUri: Uri): PuzzleResult? {
-        if (apiKey.isEmpty()) {
-            Log.w(TAG, "ANTHROPIC_API_KEY not configured — add anthropic.api.key to local.properties")
+        val bitmap = loadBitmap(imageUri) ?: return null
+
+        val visionText = try {
+            Tasks.await(
+                TextRecognition
+                    .getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                    .process(InputImage.fromBitmap(bitmap, 0))
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "ML Kit OCR failed", e)
             return null
         }
 
-        val (imageBytes, mimeType) = readImage(imageUri) ?: return null
-        val base64Data = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+        // Collect single-letter elements that sit on a coloured (non-white) tile background.
+        val coloredLetters = buildList {
+            for (block in visionText.textBlocks)
+                for (line in block.lines)
+                    for (element in line.elements) {
+                        val ch = element.text.trim()
+                        if (ch.length != 1 || !ch[0].isLetter()) continue
+                        val box = element.boundingBox ?: continue
+                        val bgColor = sampleTileBackground(bitmap, box)
+                        val result = classifyTileColor(bgColor) ?: continue
+                        add(ColoredLetter(ch[0].uppercaseChar(), result, box))
+                    }
+        }
 
-        val mediaType = if (mimeType?.contains("png", ignoreCase = true) == true)
-            Base64ImageSource.MediaType.IMAGE_PNG
-        else
-            Base64ImageSource.MediaType.IMAGE_JPEG
+        if (coloredLetters.isEmpty()) return null
 
-        val imageBlock = ContentBlockParam.ofImage(
-            ImageBlockParam.builder()
-                .source(
-                    Base64ImageSource.builder()
-                        .mediaType(mediaType)
-                        .data(base64Data)
-                        .build()
+        // Group by vertical position, keep only complete 5-tile rows (grid rows).
+        // Keyboard rows have 7–10 keys so they are naturally excluded.
+        val guesses = groupIntoRows(coloredLetters)
+            .filter { it.size == 5 }
+            .map { row ->
+                CompletedGuess(
+                    row.sortedBy { it.box.left }
+                        .map { GuessedTile(it.letter, it.result) }
                 )
-                .build()
+            }
+
+        return if (guesses.isEmpty()) null else PuzzleResult(guesses)
+    }
+
+    // ── Bitmap loading ────────────────────────────────────────────────────────
+
+    private fun loadBitmap(uri: Uri): Bitmap? =
+        try {
+            context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to decode bitmap from $uri", e)
+            null
+        }
+
+    // ── Colour sampling ───────────────────────────────────────────────────────
+
+    /**
+     * Samples the tile background colour by probing four points just outside the
+     * ML Kit letter bounding box (above, below, left, right).
+     *
+     * Wordle tiles are noticeably larger than the letter glyph, so a margin equal
+     * to ⅓ of the letter height reliably lands on the coloured tile background
+     * rather than on the white letter strokes.
+     *
+     * Returns the most saturated of the four samples — i.e., the one most likely
+     * to represent the tile colour rather than a neutral border or gap.
+     */
+    private fun sampleTileBackground(bitmap: Bitmap, box: Rect): Int {
+        val margin = maxOf(box.width(), box.height()) / 3
+        val cx = box.centerX()
+        val cy = box.centerY()
+        val candidates = listOf(
+            bitmap.safePixel(cx, box.top    - margin),
+            bitmap.safePixel(cx, box.bottom + margin),
+            bitmap.safePixel(box.left  - margin, cy),
+            bitmap.safePixel(box.right + margin, cy),
         )
-
-        val textBlock = ContentBlockParam.ofText(
-            TextBlockParam.builder().text(PARSE_PROMPT).build()
-        )
-
-        val client: AnthropicClient = AnthropicOkHttpClient.builder()
-            .apiKey(apiKey)
-            .build()
-
-        return try {
-            val response = client.messages().create(
-                MessageCreateParams.builder()
-                    .model(Model.of("claude-opus-4-6"))
-                    .addUserMessageOfBlockParams(listOf(imageBlock, textBlock))
-                    .maxTokens(1024L)
-                    .build()
-            )
-            val rawText = response.content()
-                .firstNotNullOfOrNull { block -> block.text().orElse(null)?.text() }
-                ?: run {
-                    Log.w(TAG, "Claude returned no text content")
-                    return null
-                }
-            parseJson(rawText)
-        } catch (e: Exception) {
-            Log.e(TAG, "Claude API call failed", e)
-            null
-        }
+        return candidates.maxByOrNull { pixel ->
+            val hsv = FloatArray(3)
+            Color.colorToHSV(pixel, hsv)
+            hsv[1]   // highest saturation = most coloured → most likely tile background
+        } ?: candidates.first()
     }
 
-    private fun readImage(uri: Uri): Pair<ByteArray, String?>? {
-        return try {
-            val mimeType = context.contentResolver.getType(uri)
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                ?: return null
-            bytes to mimeType
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to read image URI: $uri", e)
-            null
-        }
+    /**
+     * Maps a background pixel colour to a [LetterResult] using HSV ranges that
+     * cover both NYT Wordle light-mode and dark-mode tile colours.
+     *
+     * Returns `null` for white / near-white pixels (empty tile or UI background).
+     *
+     * Colour reference:
+     *  - Correct  green  #538D4E  H≈125° S≈45% V≈55%
+     *  - Present  yellow #B59F3B  H≈ 51° S≈67% V≈71%
+     *  - Absent   grey   #787C7E  H≈200° S≈ 2% V≈49%  (light mode)
+     *             dark   #3A3A3C  H≈240° S≈ 3% V≈24%  (dark mode)
+     */
+    private fun classifyTileColor(pixel: Int): LetterResult? {
+        val hsv = FloatArray(3)
+        Color.colorToHSV(pixel, hsv)
+        val (h, s, v) = Triple(hsv[0], hsv[1], hsv[2])
+
+        if (s < 0.12f && v > 0.80f) return null              // white / near-white → empty tile
+        if (h in 85f..170f && s > 0.20f) return LetterResult.Correct   // green
+        if (h in 30f..85f  && s > 0.25f) return LetterResult.Present   // yellow / gold
+        return LetterResult.Absent                             // grey or dark → absent
     }
 
-    private fun parseJson(raw: String): PuzzleResult? {
-        return try {
-            // Claude occasionally wraps JSON in markdown fences — strip them.
-            val jsonStr = raw.trim().let { s ->
-                val start = s.indexOf('{')
-                val end = s.lastIndexOf('}')
-                if (start >= 0 && end > start) s.substring(start, end + 1) else s
+    // ── Row grouping ──────────────────────────────────────────────────────────
+
+    /**
+     * Clusters [ColoredLetter]s into rows by their vertical-centre coordinate.
+     * Two letters are in the same row when their centres are within 70% of the
+     * first tile's height of each other — far enough to handle ML Kit's box
+     * variation, tight enough to separate adjacent Wordle rows.
+     */
+    private fun groupIntoRows(letters: List<ColoredLetter>): List<List<ColoredLetter>> {
+        val sorted = letters.sortedBy { it.box.centerY() }
+        val tolerance = sorted.first().box.height() * 0.7
+        val rows = mutableListOf<MutableList<ColoredLetter>>()
+        var current = mutableListOf(sorted.first())
+
+        for (letter in sorted.drop(1)) {
+            if (abs(letter.box.centerY() - current.last().box.centerY()) <= tolerance) {
+                current.add(letter)
+            } else {
+                rows.add(current)
+                current = mutableListOf(letter)
             }
-            val guessesArr = JSONObject(jsonStr).getJSONArray("guesses")
-            val guesses = (0 until guessesArr.length()).map { i ->
-                val tilesArr = guessesArr.getJSONObject(i).getJSONArray("tiles")
-                val tiles = (0 until tilesArr.length()).map { j ->
-                    val tile = tilesArr.getJSONObject(j)
-                    GuessedTile(
-                        letter = tile.getString("letter").first().uppercaseChar(),
-                        result = when (tile.getString("result")) {
-                            "correct" -> LetterResult.Correct
-                            "present" -> LetterResult.Present
-                            else      -> LetterResult.Absent
-                        }
-                    )
-                }
-                CompletedGuess(tiles)
-            }
-            if (guesses.isEmpty()) null else PuzzleResult(guesses)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse JSON response:\n$raw", e)
-            null
         }
+        rows.add(current)
+        return rows
     }
 
-    companion object {
-        private val PARSE_PROMPT = """
-            This is a screenshot of a completed Wordle puzzle.
-            Examine the grid and return a JSON object describing each completed guess row.
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
-            For each row that has colored tiles, read:
-            - The letter shown on each tile (uppercase A-Z)
-            - The tile color: "correct" (green), "present" (yellow/orange), or "absent" (gray/dark gray)
+    private fun Bitmap.safePixel(x: Int, y: Int): Int =
+        getPixel(x.coerceIn(0, width - 1), y.coerceIn(0, height - 1))
 
-            Return ONLY this JSON — no markdown, no code fences, no explanation:
-            {
-              "guesses": [
-                {
-                  "tiles": [
-                    {"letter": "R", "result": "absent"},
-                    {"letter": "A", "result": "present"},
-                    {"letter": "I", "result": "absent"},
-                    {"letter": "S", "result": "absent"},
-                    {"letter": "E", "result": "absent"}
-                  ]
-                }
-              ]
-            }
-
-            Include only rows that have colored tiles (completed guesses). Skip any empty rows.
-        """.trimIndent()
-    }
+    private data class ColoredLetter(val letter: Char, val result: LetterResult, val box: Rect)
 }
