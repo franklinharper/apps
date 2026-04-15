@@ -4,5 +4,37 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+
+	<!--
+	    Share-target: declare that the app can open image files.
+	    This makes Wordle Coach appear in the iOS share sheet when the user
+	    shares a screenshot from the Wordle app or Photos.
+
+	    NOTE: To become a *proper* iOS share target (appearing in the share
+	    sheet for any app, not just Files/Documents), a Share Extension target
+	    must be added in Xcode. The extension receives the shared image via
+	    NSExtensionItem, passes it to the host app via an App Group, and the
+	    host app reads and parses it. That is a future Xcode task.
+	-->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Image</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.image</string>
+				<string>public.png</string>
+				<string>public.jpeg</string>
+			</array>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+	</array>
+
+	<key>UTExportedTypeDeclarations</key>
+	<array/>
 </dict>
 </plist>

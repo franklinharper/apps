@@ -11,10 +11,24 @@
             android:launchMode="singleInstance"
             android:windowSoftInputMode="adjustPan"
             android:exported="true">
+
+            <!-- Normal launcher entry point -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!--
+                Share-target: receive a Wordle screenshot from another app.
+                The activity reads the image URI via Intent.EXTRA_STREAM and
+                passes it to the screenshot parser (see AppActivity).
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
         </activity>
     </application>
 
