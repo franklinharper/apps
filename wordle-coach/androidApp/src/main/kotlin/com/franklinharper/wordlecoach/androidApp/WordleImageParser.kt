@@ -152,7 +152,10 @@ class WordleImageParser(private val context: Context) {
      */
     private fun groupIntoRows(letters: List<ColoredLetter>): List<List<ColoredLetter>> {
         val sorted = letters.sortedBy { it.box.centerY() }
-        val tolerance = sorted.first().box.height() * 0.7
+        // Use median letter height as the row-separation tolerance so a single
+        // unusually-sized bounding box doesn't skew the threshold.
+        val medianHeight = sorted.map { it.box.height() }.sorted()[sorted.size / 2]
+        val tolerance = medianHeight * 0.7
         val rows = mutableListOf<MutableList<ColoredLetter>>()
         var current = mutableListOf(sorted.first())
 
