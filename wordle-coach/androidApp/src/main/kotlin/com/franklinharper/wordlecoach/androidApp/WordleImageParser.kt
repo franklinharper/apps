@@ -67,8 +67,10 @@ class WordleImageParser(private val context: Context) {
 
         // Group by vertical position, keep only complete 5-tile rows (grid rows).
         // Keyboard rows have 7–10 keys so they are naturally excluded.
+        // Wordle allows at most 6 guesses, so cap at 6 rows top-to-bottom.
         val guesses = groupIntoRows(coloredLetters)
             .filter { it.size == 5 }
+            .take(6)
             .map { row ->
                 CompletedGuess(
                     row.sortedBy { it.box.left }
