@@ -9,42 +9,49 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.franklinharper.wordlecoach.App
 import com.franklinharper.wordlecoach.domain.PuzzleResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AppActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val puzzle: PuzzleResult? = parseSharedIntent(intent)
+
+        // Compose state — starts null (shows step-1 coaching immediately).
+        // Updated asynchronously once Claude parses the shared screenshot.
+        var puzzle by mutableStateOf<PuzzleResult?>(null)
+
+        @Suppress("DEPRECATION")
+        val imageUri: Uri? = if (intent?.action == Intent.ACTION_SEND)
+            intent.getParcelableExtra(Intent.EXTRA_STREAM)
+        else
+            null
+
+        if (imageUri != null) {
+            lifecycleScope.launch {
+                puzzle = withContext(Dispatchers.IO) {
+                    WordleImageParser(this@AppActivity, BuildConfig.ANTHROPIC_API_KEY)
+                        .parse(imageUri)
+                }
+            }
+        }
+
         setContent {
             App(
                 puzzle = puzzle,
                 onThemeChanged = { ThemeChanged(it) },
             )
         }
-    }
-
-    /**
-     * Extracts a [PuzzleResult] from a share intent when the app is opened as a share target.
-     *
-     * The intent carries the screenshot URI in [Intent.EXTRA_STREAM].
-     * Parsing the image (OCR of the board tiles) is a TODO — a real implementation would use
-     * ML Kit's text recogniser or a custom vision pipeline to read the letter and colour of
-     * each tile and build a [PuzzleResult] from them.
-     *
-     * Returns `null` if the intent is not a share intent or if parsing is not yet implemented.
-     */
-    private fun parseSharedIntent(intent: Intent?): PuzzleResult? {
-        if (intent?.action != Intent.ACTION_SEND) return null
-        @Suppress("DEPRECATION")
-        val imageUri: Uri = intent.getParcelableExtra(Intent.EXTRA_STREAM) ?: return null
-        // TODO: run OCR on imageUri to extract tile letters and colours, then build PuzzleResult
-        android.util.Log.d("WordleCoach", "Received shared image: $imageUri — OCR not yet implemented")
-        return null
     }
 }
 
