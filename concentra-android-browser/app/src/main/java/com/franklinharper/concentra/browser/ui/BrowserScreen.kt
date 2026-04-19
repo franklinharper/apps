@@ -3,6 +3,7 @@ package com.franklinharper.concentra.browser.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -85,32 +86,38 @@ fun BrowserScreen(
         }
 
         if (uiState.isChromeVisible) {
-            Box(
+            Column(
                 modifier =
                     Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.08f))
-                        .clickable(onClick = onChromeScrimTap),
-            )
+                        .fillMaxSize(),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.08f))
+                            .clickable(onClick = onChromeScrimTap),
+                )
 
-            BrowserChromeSheet(
-                uiState = uiState,
-                urlInput = urlInput,
-                requestInitialFocus = uiState.currentUrl == null,
-                onUrlInputChange = onUrlInputChange,
-                onUrlSubmit = onUrlSubmit,
-                onGoogleClick = onGoogleClick,
-                onArchiveClick = onArchiveClick,
-                onShareClick = onShareClick,
-                onFindClick = onFindClick,
-                onSettingsClick = onSettingsClick,
-                onExitClick = onExitClick,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .navigationBarsPadding(),
-            )
+                BrowserChromeSheet(
+                    uiState = uiState,
+                    urlInput = urlInput,
+                    requestInitialFocus = uiState.currentUrl == null,
+                    onUrlInputChange = onUrlInputChange,
+                    onUrlSubmit = onUrlSubmit,
+                    onGoogleClick = onGoogleClick,
+                    onArchiveClick = onArchiveClick,
+                    onShareClick = onShareClick,
+                    onFindClick = onFindClick,
+                    onSettingsClick = onSettingsClick,
+                    onExitClick = onExitClick,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding(),
+                )
+            }
         }
 
         if (!uiState.isChromeVisible) {

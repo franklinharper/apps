@@ -6,10 +6,9 @@ import android.webkit.WebView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.franklinharper.concentra.browser.BrowserViewModel
@@ -26,20 +25,30 @@ fun WebViewHost(
     onEvent: (WebViewEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val configurator = remember { WebViewConfigurator() }
-    var webView by remember { mutableStateOf<WebView?>(null) }
+    val currentOnEvent = rememberUpdatedState(onEvent)
+    val currentDownloadHandler = rememberUpdatedState(downloadHandler)
+    val webView =
+        remember(context) {
+            WebView(context).apply {
+                layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                webChromeClient = BrowserWebChromeClient()
+                webViewClient =
+                    BrowserWebViewClient(onEvent = { event -> currentOnEvent.value(event) })
+            }
+        }
 
     DisposableEffect(webView) {
         onDispose {
-            webView?.destroy()
+            webView.destroy()
         }
     }
 
     LaunchedEffect(webView, command) {
-        val currentWebView = webView ?: return@LaunchedEffect
         when (val currentCommand = command) {
             is WebViewCommand.LoadUrl -> {
-                currentWebView.loadUrl(currentCommand.url)
+                webView.loadUrl(currentCommand.url)
                 onCommandConsumed()
             }
             null -> Unit
@@ -47,16 +56,15 @@ fun WebViewHost(
     }
 
     LaunchedEffect(webView, effect) {
-        val currentWebView = webView ?: return@LaunchedEffect
         when (effect) {
             BrowserViewModel.Effect.GoBack -> {
-                if (currentWebView.canGoBack()) {
-                    currentWebView.goBack()
+                if (webView.canGoBack()) {
+                    webView.goBack()
                 }
                 onEffectConsumed()
             }
             BrowserViewModel.Effect.OpenFindInPage -> {
-                currentWebView.showFindDialog("", true)
+                webView.showFindDialog("", true)
                 onEffectConsumed()
             }
             null -> Unit
@@ -65,35 +73,21 @@ fun WebViewHost(
     }
 
     AndroidView(
-        factory = { context ->
-            WebView(context).apply {
-                layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                webChromeClient = BrowserWebChromeClient()
-                webViewClient = BrowserWebViewClient(onEvent = onEvent)
-                setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-                    downloadHandler.enqueue(
+        factory = { webView },
+        modifier = modifier,
+        update = { currentWebView ->
+            currentWebView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+                currentDownloadHandler.value.enqueue(
                         url = url,
                         userAgent = userAgent,
                         contentDisposition = contentDisposition,
                         mimeType = mimeType,
                     )
-                }
-                settings.applyTo(
-                    webView = this,
-                    configurator = configurator,
-                )
-                webView = this
             }
-        },
-        modifier = modifier,
-        update = { currentWebView ->
             settings.applyTo(
                 webView = currentWebView,
                 configurator = configurator,
             )
-            if (webView !== currentWebView) {
-                webView = currentWebView
-            }
         },
     )
 }
