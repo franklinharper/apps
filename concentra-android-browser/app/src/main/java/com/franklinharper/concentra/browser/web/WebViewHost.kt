@@ -1,6 +1,5 @@
 package com.franklinharper.concentra.browser.web
 
-import android.app.Activity
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.CookieManager
 import android.webkit.WebView
@@ -24,12 +23,11 @@ fun WebViewHost(
     onCommandConsumed: () -> Unit,
     onEffectConsumed: () -> Unit,
     onEvent: (WebViewEvent) -> Unit,
+    onBridgeCreated: (PasskeyBridge) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity
     val configurator = remember { WebViewConfigurator() }
-    val passkeyManager = remember { PasskeyManager() }
     val currentOnEvent = rememberUpdatedState(onEvent)
     val currentDownloadHandler = rememberUpdatedState(downloadHandler)
 
@@ -45,20 +43,23 @@ fun WebViewHost(
                 webViewClient =
                     BrowserWebViewClient(
                         onEvent = { event -> currentOnEvent.value(event) },
-                        onPageStarted = { view -> view?.evaluateJavascript(polyfillJs, null) },
+                        onPageStarted = { view ->
+                            android.util.Log.d("WebViewHost", "onPageStarted injecting polyfill, url=")
+                            view?.evaluateJavascript(polyfillJs, null)
+                        },
                     )
             }
         }
 
     val bridge = remember(webView) {
-        PasskeyBridge(passkeyManager, webView, activity).also { b ->
+        PasskeyBridge(context, webView).also { b ->
             webView.addJavascriptInterface(b, "Android")
+            onBridgeCreated(b)
         }
     }
 
     DisposableEffect(webView) {
         onDispose {
-            bridge.close()
             webView.destroy()
         }
     }
