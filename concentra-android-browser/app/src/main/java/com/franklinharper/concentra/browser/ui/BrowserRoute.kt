@@ -23,10 +23,11 @@ import com.franklinharper.concentra.browser.BrowserAppContainer
 import com.franklinharper.concentra.browser.BrowserViewModel
 import com.franklinharper.concentra.browser.model.BrowserAction
 import com.franklinharper.concentra.browser.settings.SettingsActivity
+import com.franklinharper.concentra.browser.web.PasskeyBridge
 import com.franklinharper.concentra.browser.web.WebViewCommand
 
 @Composable
-fun BrowserRoute(container: BrowserAppContainer) {
+fun BrowserRoute(container: BrowserAppContainer, onBridgeCreated: (PasskeyBridge) -> Unit = {}) {
     val context = LocalContext.current
     val activity = context as? Activity
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -112,5 +113,6 @@ fun BrowserRoute(container: BrowserAppContainer) {
         onExitClick = { viewModel.onAction(BrowserAction.ExitClicked) },
         onHotspotSwipeUp = { viewModel.onAction(BrowserAction.ShowChrome) },
         onChromeScrimTap = { viewModel.onAction(BrowserAction.HideChrome) },
+        onBridgeCreated = onBridgeCreated,
     )
 }

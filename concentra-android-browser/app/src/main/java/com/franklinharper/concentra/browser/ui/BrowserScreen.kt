@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.franklinharper.concentra.browser.model.BrowserUiState
 import com.franklinharper.concentra.browser.BrowserViewModel
+import com.franklinharper.concentra.browser.web.PasskeyBridge
 import com.franklinharper.concentra.browser.web.WebViewCommand
 import com.franklinharper.concentra.browser.web.WebViewEvent
 import com.franklinharper.concentra.browser.web.WebViewHost
@@ -42,6 +43,7 @@ fun BrowserScreen(
     onExitClick: () -> Unit,
     onHotspotSwipeUp: () -> Unit,
     onChromeScrimTap: () -> Unit,
+    onBridgeCreated: (PasskeyBridge) -> Unit = {},
 ) {
     Box(
         modifier =
@@ -65,6 +67,7 @@ fun BrowserScreen(
             onCommandConsumed = onWebCommandConsumed,
             onEffectConsumed = onWebEffectConsumed,
             onEvent = onWebViewEvent,
+            onBridgeCreated = onBridgeCreated,
             modifier = Modifier.fillMaxSize().statusBarsPadding(),
         )
 
