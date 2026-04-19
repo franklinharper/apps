@@ -19,4 +19,20 @@ class UrlNormalizerTest {
             UrlNormalizer().normalize("https://example.com/path")
         )
     }
+
+    @Test
+    fun `normalizer keeps full http url`() {
+        assertEquals(
+            "http://example.com/path",
+            UrlNormalizer().normalize("http://example.com/path")
+        )
+    }
+
+    @Test
+    fun `normalizer preserves uppercase scheme`() {
+        assertEquals(
+            "HTTPS://example.com/path",
+            UrlNormalizer().normalize("  HTTPS://example.com/path  ")
+        )
+    }
 }
