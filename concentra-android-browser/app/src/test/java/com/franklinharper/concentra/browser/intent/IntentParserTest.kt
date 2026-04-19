@@ -5,9 +5,9 @@ import android.net.Uri
 import com.franklinharper.concentra.browser.model.LaunchRequest
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.junit.runner.RunWith
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -15,7 +15,7 @@ class IntentParserTest {
     @Test
     fun `empty launch returns empty request`() {
         val parser = IntentParser()
-        val intent = Intent(Intent.ACTION_MAIN)
+        val intent = Intent()
 
         assertEquals(LaunchRequest.Empty, parser.parse(intent))
     }
@@ -36,7 +36,10 @@ class IntentParserTest {
         val parser = IntentParser()
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "Read this https://example.com/page")
+            putExtra(
+                Intent.EXTRA_TEXT,
+                "Read this https://example.com/page and also https://example.com/second"
+            )
         }
 
         assertEquals(
