@@ -7,6 +7,8 @@ import com.franklinharper.concentra.browser.model.LaunchRequest
 import com.franklinharper.concentra.browser.settings.SettingsRepository
 import com.franklinharper.concentra.browser.url.ArchiveTodayUrlBuilder
 import com.franklinharper.concentra.browser.url.UrlNormalizer
+import com.franklinharper.concentra.browser.web.WebViewCommand
+import com.franklinharper.concentra.browser.web.WebViewEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,9 +22,9 @@ class BrowserViewModel(
     private val _uiState = MutableStateFlow(initialState(launchRequest, settingsRepository))
     val uiState: StateFlow<BrowserUiState> = _uiState.asStateFlow()
 
-    private var pendingCommand: WebCommand? =
+    private var pendingCommand: WebViewCommand? =
         when (launchRequest) {
-            is LaunchRequest.OpenUrl -> WebCommand.LoadUrl(launchRequest.url)
+            is LaunchRequest.OpenUrl -> WebViewCommand.LoadUrl(launchRequest.url)
             LaunchRequest.Empty -> null
         }
 
@@ -61,12 +63,37 @@ class BrowserViewModel(
         loadUrl(urlNormalizer.normalize(rawInput))
     }
 
-    fun consumePendingWebCommand(): String? {
+    fun onWebViewEvent(event: WebViewEvent) {
+        when (event) {
+            is WebViewEvent.PageLoadStarted -> {
+                _uiState.value =
+                    _uiState.value.copy(
+                        currentUrl = event.url,
+                        isLoading = true,
+                        isArchiveTodayEnabled = event.url != null,
+                        isShareEnabled = event.url != null,
+                        isFindInPageEnabled = event.url != null,
+                    )
+            }
+            is WebViewEvent.PageLoadFinished ->
+                applyNavigationState(
+                    currentUrl = event.currentUrl,
+                    canGoBack = event.canGoBack,
+                    isLoading = false,
+                )
+            is WebViewEvent.NavigationStateChanged ->
+                applyNavigationState(
+                    currentUrl = event.currentUrl,
+                    canGoBack = event.canGoBack,
+                    isLoading = _uiState.value.isLoading,
+                )
+        }
+    }
+
+    fun consumePendingWebCommand(): WebViewCommand? {
         val command = pendingCommand ?: return null
         pendingCommand = null
-        return when (command) {
-            is WebCommand.LoadUrl -> command.url
-        }
+        return command
     }
 
     fun consumePendingEffect(): Effect? {
@@ -75,14 +102,16 @@ class BrowserViewModel(
         return effect
     }
 
-    fun updatePageState(
+    private fun applyNavigationState(
         currentUrl: String?,
-        canGoBack: Boolean = false,
+        canGoBack: Boolean,
+        isLoading: Boolean,
     ) {
         _uiState.value =
             _uiState.value.copy(
                 currentUrl = currentUrl,
                 canGoBack = canGoBack,
+                isLoading = isLoading,
                 isArchiveTodayEnabled = currentUrl != null,
                 isShareEnabled = currentUrl != null,
                 isFindInPageEnabled = currentUrl != null,
@@ -108,10 +137,11 @@ class BrowserViewModel(
     }
 
     private fun loadUrl(url: String) {
-        pendingCommand = WebCommand.LoadUrl(url)
+        pendingCommand = WebViewCommand.LoadUrl(url)
         _uiState.value =
             _uiState.value.copy(
                 pendingUrlInput = url,
+                isLoading = true,
                 isChromeVisible = false,
             )
     }
@@ -128,10 +158,6 @@ class BrowserViewModel(
 
     private fun updateChromeVisibility(isVisible: Boolean) {
         _uiState.value = _uiState.value.copy(isChromeVisible = isVisible)
-    }
-
-    private sealed interface WebCommand {
-        data class LoadUrl(val url: String) : WebCommand
     }
 
     sealed interface Effect {

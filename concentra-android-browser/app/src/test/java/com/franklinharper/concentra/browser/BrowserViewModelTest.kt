@@ -4,6 +4,8 @@ import com.franklinharper.concentra.browser.model.BrowserAction
 import com.franklinharper.concentra.browser.model.LaunchRequest
 import com.franklinharper.concentra.browser.settings.BrowserSettings
 import com.franklinharper.concentra.browser.settings.SettingsRepository
+import com.franklinharper.concentra.browser.web.WebViewCommand
+import com.franklinharper.concentra.browser.web.WebViewEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -26,7 +28,10 @@ class BrowserViewModelTest {
         assertFalse(viewModel.uiState.value.isChromeVisible)
         assertNull(viewModel.uiState.value.currentUrl)
         assertEquals(BrowserSettings(), viewModel.uiState.value.settings)
-        assertEquals("https://example.com", viewModel.consumePendingWebCommand())
+        assertEquals(
+            WebViewCommand.LoadUrl("https://example.com"),
+            viewModel.consumePendingWebCommand(),
+        )
         assertNull(viewModel.consumePendingWebCommand())
     }
 
@@ -43,7 +48,10 @@ class BrowserViewModelTest {
 
         viewModel.onAction(BrowserAction.SubmitUrl("example.com"))
 
-        assertEquals("https://example.com", viewModel.consumePendingWebCommand())
+        assertEquals(
+            WebViewCommand.LoadUrl("https://example.com"),
+            viewModel.consumePendingWebCommand(),
+        )
         assertFalse(viewModel.uiState.value.isChromeVisible)
     }
 
@@ -63,19 +71,27 @@ class BrowserViewModelTest {
 
         viewModel.onAction(BrowserAction.GoogleClicked)
 
-        assertEquals("https://www.google.com", viewModel.consumePendingWebCommand())
+        assertEquals(
+            WebViewCommand.LoadUrl("https://www.google.com"),
+            viewModel.consumePendingWebCommand(),
+        )
         assertNull(viewModel.consumePendingWebCommand())
     }
 
     @Test
     fun `archive action emits archive url when current url exists`() {
         val viewModel = buildViewModel(LaunchRequest.Empty)
-        viewModel.updatePageState(currentUrl = "https://example.com")
+        viewModel.onWebViewEvent(
+            WebViewEvent.NavigationStateChanged(
+                currentUrl = "https://example.com",
+                canGoBack = false,
+            ),
+        )
 
         viewModel.onAction(BrowserAction.ArchiveTodayClicked)
 
         assertEquals(
-            "https://archive.ph/https%3A%2F%2Fexample.com",
+            WebViewCommand.LoadUrl("https://archive.ph/https%3A%2F%2Fexample.com"),
             viewModel.consumePendingWebCommand(),
         )
         assertNull(viewModel.consumePendingWebCommand())
@@ -84,7 +100,12 @@ class BrowserViewModelTest {
     @Test
     fun `share action emits share effect when current url exists`() {
         val viewModel = buildViewModel(LaunchRequest.Empty)
-        viewModel.updatePageState(currentUrl = "https://example.com")
+        viewModel.onWebViewEvent(
+            WebViewEvent.NavigationStateChanged(
+                currentUrl = "https://example.com",
+                canGoBack = false,
+            ),
+        )
 
         viewModel.onAction(BrowserAction.ShareLinkClicked)
 
@@ -108,7 +129,12 @@ class BrowserViewModelTest {
     @Test
     fun `find in page action emits effect when current url exists`() {
         val viewModel = buildViewModel(LaunchRequest.Empty)
-        viewModel.updatePageState(currentUrl = "https://example.com")
+        viewModel.onWebViewEvent(
+            WebViewEvent.NavigationStateChanged(
+                currentUrl = "https://example.com",
+                canGoBack = false,
+            ),
+        )
 
         viewModel.onAction(BrowserAction.FindInPageClicked)
 
@@ -129,7 +155,12 @@ class BrowserViewModelTest {
     @Test
     fun `back closes chrome before navigating web history`() {
         val viewModel = buildViewModel(LaunchRequest.Empty)
-        viewModel.updatePageState(currentUrl = "https://example.com", canGoBack = true)
+        viewModel.onWebViewEvent(
+            WebViewEvent.NavigationStateChanged(
+                currentUrl = "https://example.com",
+                canGoBack = true,
+            ),
+        )
         viewModel.onAction(BrowserAction.ShowChrome)
 
         viewModel.onAction(BrowserAction.BackPressed)
@@ -161,6 +192,44 @@ class BrowserViewModelTest {
         viewModel.onAction(BrowserAction.HideChrome)
 
         assertFalse(viewModel.uiState.value.isChromeVisible)
+    }
+
+    @Test
+    fun `navigation event updates current url and enables current page actions`() {
+        val viewModel = buildViewModel(LaunchRequest.Empty)
+
+        viewModel.onWebViewEvent(
+            WebViewEvent.NavigationStateChanged(
+                currentUrl = "https://example.com",
+                canGoBack = true,
+            ),
+        )
+
+        assertEquals("https://example.com", viewModel.uiState.value.currentUrl)
+        assertTrue(viewModel.uiState.value.canGoBack)
+        assertTrue(viewModel.uiState.value.isArchiveTodayEnabled)
+        assertTrue(viewModel.uiState.value.isShareEnabled)
+        assertTrue(viewModel.uiState.value.isFindInPageEnabled)
+    }
+
+    @Test
+    fun `page loading events update loading state`() {
+        val viewModel = buildViewModel(LaunchRequest.Empty)
+
+        viewModel.onWebViewEvent(WebViewEvent.PageLoadStarted(url = "https://example.com"))
+
+        assertTrue(viewModel.uiState.value.isLoading)
+        assertEquals("https://example.com", viewModel.uiState.value.currentUrl)
+
+        viewModel.onWebViewEvent(
+            WebViewEvent.PageLoadFinished(
+                currentUrl = "https://example.com",
+                canGoBack = false,
+            ),
+        )
+
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertEquals("https://example.com", viewModel.uiState.value.currentUrl)
     }
 
     private fun buildViewModel(launchRequest: LaunchRequest): BrowserViewModel =

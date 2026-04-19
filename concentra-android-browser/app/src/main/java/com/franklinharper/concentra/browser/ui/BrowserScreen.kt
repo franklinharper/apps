@@ -1,6 +1,7 @@
 package com.franklinharper.concentra.browser.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,11 +18,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import com.franklinharper.concentra.browser.model.BrowserUiState
+import com.franklinharper.concentra.browser.BrowserViewModel
+import com.franklinharper.concentra.browser.web.WebViewCommand
+import com.franklinharper.concentra.browser.web.WebViewEvent
+import com.franklinharper.concentra.browser.web.WebViewHost
 
 @Composable
 fun BrowserScreen(
     uiState: BrowserUiState,
     urlInput: String,
+    pendingWebCommand: WebViewCommand?,
+    pendingWebEffect: BrowserViewModel.Effect?,
+    onWebCommandConsumed: () -> Unit,
+    onWebEffectConsumed: () -> Unit,
+    onWebViewEvent: (WebViewEvent) -> Unit,
     onUrlInputChange: (String) -> Unit,
     onUrlSubmit: () -> Unit,
     onGoogleClick: () -> Unit,
@@ -30,6 +40,8 @@ fun BrowserScreen(
     onFindClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onExitClick: () -> Unit,
+    onHotspotSwipeUp: () -> Unit,
+    onChromeScrimTap: () -> Unit,
 ) {
     Box(
         modifier =
@@ -45,6 +57,16 @@ fun BrowserScreen(
                     testTagsAsResourceId = true
                 },
     ) {
+        WebViewHost(
+            settings = uiState.settings,
+            command = pendingWebCommand,
+            effect = pendingWebEffect,
+            onCommandConsumed = onWebCommandConsumed,
+            onEffectConsumed = onWebEffectConsumed,
+            onEvent = onWebViewEvent,
+            modifier = Modifier.fillMaxSize(),
+        )
+
         Box(
             modifier =
                 Modifier
@@ -60,6 +82,14 @@ fun BrowserScreen(
         }
 
         if (uiState.isChromeVisible) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.08f))
+                        .clickable(onClick = onChromeScrimTap),
+            )
+
             BrowserChromeSheet(
                 uiState = uiState,
                 urlInput = urlInput,
@@ -82,6 +112,7 @@ fun BrowserScreen(
 
         if (!uiState.isChromeVisible) {
             HotspotOverlay(
+                onSwipeUp = onHotspotSwipeUp,
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
