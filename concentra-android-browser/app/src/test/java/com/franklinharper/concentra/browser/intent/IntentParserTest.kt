@@ -32,6 +32,14 @@ class IntentParserTest {
     }
 
     @Test
+    fun `view intent ignores unsupported scheme`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("javascript:alert('xss')"))
+
+        assertEquals(LaunchRequest.Empty, parser.parse(intent))
+    }
+
+    @Test
     fun `send intent extracts first url from text`() {
         val parser = IntentParser()
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -44,6 +52,31 @@ class IntentParserTest {
 
         assertEquals(
             LaunchRequest.OpenUrl("https://example.com/page"),
+            parser.parse(intent)
+        )
+    }
+
+    @Test
+    fun `send intent returns empty when shared text has no url`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "This message has no link in it")
+        }
+
+        assertEquals(LaunchRequest.Empty, parser.parse(intent))
+    }
+
+    @Test
+    fun `send intent preserves balanced closing parenthesis in url`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "Read https://example.com/wiki/Function_(mathematics)")
+        }
+
+        assertEquals(
+            LaunchRequest.OpenUrl("https://example.com/wiki/Function_(mathematics)"),
             parser.parse(intent)
         )
     }
