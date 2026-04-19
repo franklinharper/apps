@@ -1,0 +1,30 @@
+<variant
+    name="debug"
+    package="com.franklinharper.concentra.browser"
+    minSdkVersion="23"
+    targetSdkVersion="36.0"
+    debuggable="true"
+    mergedManifest="build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml"
+    manifestMergeReport="build/outputs/logs/manifest-merger-debug-report.txt"
+    partialResultsDir="build/intermediates/android_test_lint_partial_results/debug/lintAnalyzeDebugAndroidTest/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+  </sourceProviders>
+  <testSourceProviders>
+    <sourceProvider
+        manifests="src/androidTest/AndroidManifest.xml"
+        javaDirectories="src/androidTest/java:src/androidTestDebug/java:src/androidTest/kotlin:src/androidTestDebug/kotlin"
+        resDirectories="src/androidTest/res:src/androidTestDebug/res"
+        assetsDirectories="src/androidTest/assets:src/androidTestDebug/assets"
+        androidTest="true"/>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      type="INSTRUMENTATION_TEST"
+      applicationId="com.franklinharper.concentra.browser.test"
+      generatedResourceFolders="build/generated/res/resValues/androidTest/debug"
+      desugaredMethodsFiles="/Users/frank/.gradle/caches/9.4.1/transforms/05d2f61261d382776210f6a40960c029/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

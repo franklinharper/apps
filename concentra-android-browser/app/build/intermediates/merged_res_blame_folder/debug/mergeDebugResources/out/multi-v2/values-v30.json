@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.franklinharper.concentra.browser.app-mergeDebugResources-39:/values-v30/values-v30.xml",
+            "map": [
+                {
+                    "source": "/Users/frank/.gradle/caches/9.4.1/transforms/d7be8bd676e7a47c4cb71a7f5ca592c9/transformed/material3/res/values-v30/values-v30.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "72",
+                        "endOffsets": "123"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.12.3" type="incidents">
+
+    <incident
+        id="AndroidGradlePluginVersion"
+        severity="warning"
+        message="A newer version of com.android.application than 8.12.3 is available: 9.1.1">
+        <fix-replace
+            description="Replace with 9.1.1"
+            family="Update versions"
+            oldString="8.12.3"
+            replacement="9.1.1"
+            priority="0"/>
+        <location
+            file="$HOME/proj/apps/concentra-android-browser/gradle/libs.versions.toml"
+            line="3"
+            column="7"
+            startOffset="35"
+            endLine="3"
+            endColumn="15"
+            endOffset="43"/>
+        <map>
+            <entry
+                name="coordinate"
+                string="com.android.application"/>
+            <entry
+                name="revision"
+                string="9.1.1"/>
+        </map>
+    </incident>
+
+</incidents>
