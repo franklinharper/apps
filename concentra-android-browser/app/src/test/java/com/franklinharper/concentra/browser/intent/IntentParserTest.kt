@@ -47,6 +47,42 @@ class IntentParserTest {
     }
 
     @Test
+    fun `view intent accepts local html content uri`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse("content://docs/example.html"), "text/html")
+        }
+
+        assertEquals(
+            LaunchRequest.OpenUrl("content://docs/example.html"),
+            parser.parse(intent),
+        )
+    }
+
+    @Test
+    fun `view intent accepts local html file uri`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse("file:///sdcard/Download/example.html"), "text/html")
+        }
+
+        assertEquals(
+            LaunchRequest.OpenUrl("file:///sdcard/Download/example.html"),
+            parser.parse(intent),
+        )
+    }
+
+    @Test
+    fun `view intent rejects non html local content uri`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse("content://docs/example.txt"), "text/plain")
+        }
+
+        assertEquals(LaunchRequest.Empty, parser.parse(intent))
+    }
+
+    @Test
     fun `send intent extracts first url from text`() {
         val parser = IntentParser()
         val intent = Intent(Intent.ACTION_SEND).apply {

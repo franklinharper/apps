@@ -24,11 +24,17 @@ class IntentParser {
     private fun parseViewIntent(intent: Intent): LaunchRequest {
         val scheme = intent.scheme?.lowercase()
         val url = intent.dataString
+        val mimeType = intent.type?.lowercase()
 
-        return if (url != null && (scheme == "http" || scheme == "https")) {
-            LaunchRequest.OpenUrl(url)
-        } else {
-            LaunchRequest.Empty
+        if (url == null) {
+            return LaunchRequest.Empty
+        }
+
+        return when {
+            scheme == "http" || scheme == "https" -> LaunchRequest.OpenUrl(url)
+            (scheme == "content" || scheme == "file") && isHtmlMimeType(mimeType) ->
+                LaunchRequest.OpenUrl(url)
+            else -> LaunchRequest.Empty
         }
     }
 
@@ -43,4 +49,7 @@ class IntentParser {
 
         return LaunchRequest.OpenUrl(url)
     }
+
+    private fun isHtmlMimeType(mimeType: String?): Boolean =
+        mimeType == "text/html" || mimeType == "application/xhtml+xml"
 }
