@@ -12,7 +12,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.franklinharper.concentra.browser.BrowserAppContainer
 import com.franklinharper.concentra.browser.BrowserViewModel
-import com.franklinharper.concentra.browser.model.BrowserAction
 
 @Composable
 fun BrowserRoute(container: BrowserAppContainer) {
@@ -39,12 +38,12 @@ fun BrowserRoute(container: BrowserAppContainer) {
         uiState = uiState,
         urlInput = urlInput,
         onUrlInputChange = { urlInput = it },
-        onUrlSubmit = { viewModel.onAction(BrowserAction.SubmitUrl(urlInput)) },
-        onGoogleClick = { viewModel.onAction(BrowserAction.GoogleClicked) },
-        onArchiveClick = { viewModel.onAction(BrowserAction.ArchiveTodayClicked) },
-        onShareClick = { viewModel.onAction(BrowserAction.ShareLinkClicked) },
-        onFindClick = { viewModel.onAction(BrowserAction.FindInPageClicked) },
-        onSettingsClick = { viewModel.onAction(BrowserAction.OpenSettingsClicked) },
-        onExitClick = { viewModel.onAction(BrowserAction.ExitClicked) },
+        onUrlSubmit = {},
+        onGoogleClick = {},
+        onArchiveClick = {},
+        onShareClick = {},
+        onFindClick = {},
+        onSettingsClick = {},
+        onExitClick = {},
     )
 }
