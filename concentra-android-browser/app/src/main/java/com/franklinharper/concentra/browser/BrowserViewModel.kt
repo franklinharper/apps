@@ -43,12 +43,9 @@ class BrowserViewModel(
             }
 
         return BrowserUiState(
-            currentUrl = initialUrl,
+            currentUrl = null,
             pendingUrlInput = initialUrl.orEmpty(),
             isChromeVisible = initialUrl == null,
-            isArchiveTodayEnabled = initialUrl != null,
-            isShareEnabled = initialUrl != null,
-            isFindInPageEnabled = initialUrl != null,
             settings = settingsRepository.load(),
         )
     }
