@@ -2,6 +2,7 @@ package com.franklinharper.wordlecoach.androidApp
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,6 +13,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
@@ -27,9 +30,8 @@ class AppActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Compose state — starts null (shows step-1 coaching immediately).
-        // Updated asynchronously once ML Kit parses the shared screenshot.
         var puzzle by mutableStateOf<PuzzleResult?>(null)
+        var imageBitmap by mutableStateOf<ImageBitmap?>(null)
 
         @Suppress("DEPRECATION")
         val imageUri: Uri? = if (intent?.action == Intent.ACTION_SEND)
@@ -39,15 +41,22 @@ class AppActivity : ComponentActivity() {
 
         if (imageUri != null) {
             lifecycleScope.launch {
-                puzzle = withContext(Dispatchers.IO) {
-                    WordleImageParser(this@AppActivity).parse(imageUri)
+                val (parsedPuzzle, bitmap) = withContext(Dispatchers.IO) {
+                    val parsed = WordleImageParser(this@AppActivity).parse(imageUri)
+                    val bmp = contentResolver.openInputStream(imageUri)?.use { stream ->
+                        BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                    }
+                    parsed to bmp
                 }
+                puzzle = parsedPuzzle
+                imageBitmap = bitmap
             }
         }
 
         setContent {
             App(
                 puzzle = puzzle,
+                imageBitmap = imageBitmap,
                 onThemeChanged = { ThemeChanged(it) },
             )
         }

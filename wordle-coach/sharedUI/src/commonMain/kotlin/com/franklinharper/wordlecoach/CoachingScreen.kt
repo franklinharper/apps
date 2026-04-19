@@ -1,18 +1,22 @@
 package com.franklinharper.wordlecoach
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.franklinharper.wordlecoach.domain.*
@@ -27,6 +31,7 @@ private val ColorTileText = Color.White
 @Composable
 fun CoachingScreen(
     state: CoachingState,
+    imageBitmap: ImageBitmap? = null,
     onBack: () -> Unit,
     onForward: () -> Unit,
 ) {
@@ -41,7 +46,7 @@ fun CoachingScreen(
                 .padding(innerPadding)
         ) {
             when (val step = state.currentStep) {
-                is CoachingStep.BeforeFirstGuess -> BeforeFirstGuessStep()
+                is CoachingStep.BeforeFirstGuess -> BeforeFirstGuessStep(step, imageBitmap)
                 is CoachingStep.AfterGuess       -> AfterGuessStep(step)
             }
         }
@@ -51,8 +56,19 @@ fun CoachingScreen(
 // ── Step 1: Before first guess ─────────────────────────────────────────────
 
 @Composable
-private fun BeforeFirstGuessStep() {
-    Column(modifier = Modifier.fillMaxSize()) {
+private fun BeforeFirstGuessStep(
+    step: CoachingStep.BeforeFirstGuess,
+    imageBitmap: ImageBitmap?,
+) {
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState),
+    ) {
+        if (imageBitmap != null) {
+            SharedImageDebugCard(imageBitmap = imageBitmap, guesses = step.guesses)
+        }
         Text(
             text = "Step 1 — Before your first guess",
             style = MaterialTheme.typography.titleMedium,
@@ -62,14 +78,69 @@ private fun BeforeFirstGuessStep() {
             text = "C/V shape distribution across the ${WordShapeStats.stats.sumOf { it.count }} answer words  (Y counts as vowel)",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, bottom = 8.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
         )
         ShapeTableHeader()
         HorizontalDivider()
-        LazyColumn {
-            items(WordShapeStats.stats) { stat ->
-                ShapeRow(stat)
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+        WordShapeStats.stats.forEach { stat ->
+            ShapeRow(stat)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun SharedImageDebugCard(
+    imageBitmap: ImageBitmap,
+    guesses: List<CompletedGuess>,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Text(
+                text = "SHARED IMAGE & DECODED GUESSES",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 240.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // Left column: the original shared screenshot
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = "Shared Wordle screenshot",
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentScale = ContentScale.Fit,
+                )
+                // Right column: decoded tile grid at reduced tile size
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    guesses.forEach { guess ->
+                        GuessTileRow(
+                            guess = guess,
+                            tileSize = 30.dp,
+                            tileGap = 4.dp,
+                            modifier = Modifier.padding(vertical = 2.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -172,14 +243,12 @@ private fun AfterGuessStep(step: CoachingStep.AfterGuess) {
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val shapeStats = remainingShapeStats(step.remainingAnswers)
-            LazyColumn {
-                items(shapeStats) { stat ->
-                    ShapeRow(stat)
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
+            shapeStats.forEach { stat ->
+                ShapeRow(stat)
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
         }
     }
@@ -198,19 +267,24 @@ private fun remainingShapeStats(words: List<String>): List<ShapeStat> {
 // ── Guess tile row ─────────────────────────────────────────────────────────
 
 @Composable
-private fun GuessTileRow(guess: CompletedGuess, modifier: Modifier = Modifier) {
+private fun GuessTileRow(
+    guess: CompletedGuess,
+    modifier: Modifier = Modifier,
+    tileSize: Dp = 52.dp,
+    tileGap: Dp = 6.dp,
+) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(tileGap),
     ) {
         guess.tiles.forEach { tile ->
-            GuessTile(tile)
+            GuessTile(tile, tileSize)
         }
     }
 }
 
 @Composable
-private fun GuessTile(tile: GuessedTile) {
+private fun GuessTile(tile: GuessedTile, size: Dp = 52.dp) {
     val bg = when (tile.result) {
         LetterResult.Correct -> ColorCorrect
         LetterResult.Present -> ColorPresent
@@ -218,14 +292,14 @@ private fun GuessTile(tile: GuessedTile) {
     }
     Box(
         modifier = Modifier
-            .size(52.dp)
+            .size(size)
             .background(bg, RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = tile.letter.toString(),
             color = ColorTileText,
-            fontSize = 22.sp,
+            fontSize = (size.value * 0.42f).sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
         )
