@@ -232,6 +232,22 @@ class BrowserViewModelTest {
         assertEquals("https://example.com", viewModel.uiState.value.currentUrl)
     }
 
+    @Test
+    fun `reload settings refreshes browser settings from repository`() {
+        val settingsRepository = FakeSettingsRepository()
+        val viewModel =
+            BrowserViewModel(
+                launchRequest = LaunchRequest.Empty,
+                settingsRepository = settingsRepository,
+            )
+
+        settingsRepository.settings = BrowserSettings(thirdPartyCookiesEnabled = true)
+
+        viewModel.reloadSettings()
+
+        assertTrue(viewModel.uiState.value.settings.thirdPartyCookiesEnabled)
+    }
+
     private fun buildViewModel(launchRequest: LaunchRequest): BrowserViewModel =
         BrowserViewModel(
             launchRequest = launchRequest,
@@ -240,7 +256,7 @@ class BrowserViewModelTest {
 }
 
 private class FakeSettingsRepository(
-    private val settings: BrowserSettings = BrowserSettings(),
+    var settings: BrowserSettings = BrowserSettings(),
 ) : SettingsRepository {
     override fun load(): BrowserSettings = settings
 

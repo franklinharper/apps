@@ -2,8 +2,10 @@ package com.franklinharper.concentra.browser.ui
 
 import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -11,18 +13,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.franklinharper.concentra.browser.BrowserAppContainer
 import com.franklinharper.concentra.browser.BrowserViewModel
 import com.franklinharper.concentra.browser.model.BrowserAction
+import com.franklinharper.concentra.browser.settings.SettingsActivity
 import com.franklinharper.concentra.browser.web.WebViewCommand
 
 @Composable
 fun BrowserRoute(container: BrowserAppContainer) {
     val context = LocalContext.current
     val activity = context as? Activity
+    val lifecycleOwner = LocalLifecycleOwner.current
     val viewModel: BrowserViewModel =
         viewModel(
             factory =
@@ -44,6 +51,19 @@ fun BrowserRoute(container: BrowserAppContainer) {
         urlInput = uiState.pendingUrlInput
     }
 
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    viewModel.reloadSettings()
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     LaunchedEffect(uiState) {
         viewModel.consumePendingWebCommand()?.let { pendingWebCommand = it }
         viewModel.consumePendingEffect()?.let { effect ->
@@ -57,12 +77,16 @@ fun BrowserRoute(container: BrowserAppContainer) {
                     context.startActivity(Intent.createChooser(shareIntent, null))
                 }
                 BrowserViewModel.Effect.Exit -> activity?.finish()
+                BrowserViewModel.Effect.OpenSettings ->
+                    context.startActivity(Intent(context, SettingsActivity::class.java))
                 BrowserViewModel.Effect.GoBack,
-                BrowserViewModel.Effect.OpenFindInPage,
-                BrowserViewModel.Effect.OpenSettings,
-                    -> pendingWebEffect = effect
+                BrowserViewModel.Effect.OpenFindInPage -> pendingWebEffect = effect
             }
         }
+    }
+
+    BackHandler {
+        viewModel.onAction(BrowserAction.BackPressed)
     }
 
     BrowserScreen(

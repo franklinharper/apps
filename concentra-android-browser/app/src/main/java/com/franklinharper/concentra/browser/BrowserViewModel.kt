@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class BrowserViewModel(
     launchRequest: LaunchRequest,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val urlNormalizer: UrlNormalizer = UrlNormalizer(),
     private val archiveTodayUrlBuilder: ArchiveTodayUrlBuilder = ArchiveTodayUrlBuilder(),
 ) : ViewModel() {
@@ -100,6 +100,10 @@ class BrowserViewModel(
         val effect = pendingEffect ?: return null
         pendingEffect = null
         return effect
+    }
+
+    fun reloadSettings() {
+        _uiState.value = _uiState.value.copy(settings = settingsRepository.load())
     }
 
     private fun applyNavigationState(
