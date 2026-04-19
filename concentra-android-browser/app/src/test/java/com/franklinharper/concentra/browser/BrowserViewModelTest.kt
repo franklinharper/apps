@@ -48,6 +48,16 @@ class BrowserViewModelTest {
     }
 
     @Test
+    fun `blank submit url does not emit load command`() {
+        val viewModel = buildViewModel(LaunchRequest.Empty)
+
+        viewModel.onAction(BrowserAction.SubmitUrl("   "))
+
+        assertNull(viewModel.consumePendingWebCommand())
+        assertTrue(viewModel.uiState.value.isChromeVisible)
+    }
+
+    @Test
     fun `google action emits google load command`() {
         val viewModel = buildViewModel(LaunchRequest.Empty)
 
@@ -131,6 +141,16 @@ class BrowserViewModelTest {
 
         assertEquals(BrowserViewModel.Effect.GoBack, viewModel.consumePendingEffect())
         assertNull(viewModel.consumePendingEffect())
+    }
+
+    @Test
+    fun `back exits immediately on empty launch`() {
+        val viewModel = buildViewModel(LaunchRequest.Empty)
+
+        viewModel.onAction(BrowserAction.BackPressed)
+
+        assertEquals(BrowserViewModel.Effect.Exit, viewModel.consumePendingEffect())
+        assertTrue(viewModel.uiState.value.isChromeVisible)
     }
 
     @Test

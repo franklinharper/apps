@@ -30,7 +30,7 @@ class BrowserViewModel(
 
     fun onAction(action: BrowserAction) {
         when (action) {
-            is BrowserAction.SubmitUrl -> loadUrl(urlNormalizer.normalize(action.rawInput))
+            is BrowserAction.SubmitUrl -> handleSubmitUrl(action.rawInput)
             BrowserAction.GoogleClicked -> loadUrl(GOOGLE_URL)
             BrowserAction.ArchiveTodayClicked -> {
                 val currentUrl = uiState.value.currentUrl ?: return
@@ -51,6 +51,14 @@ class BrowserViewModel(
             BrowserAction.ShowChrome -> updateChromeVisibility(isVisible = true)
             BrowserAction.HideChrome -> updateChromeVisibility(isVisible = false)
         }
+    }
+
+    private fun handleSubmitUrl(rawInput: String) {
+        if (rawInput.isBlank()) {
+            return
+        }
+
+        loadUrl(urlNormalizer.normalize(rawInput))
     }
 
     fun consumePendingWebCommand(): String? {
@@ -110,6 +118,8 @@ class BrowserViewModel(
 
     private fun handleBackPressed() {
         when {
+            uiState.value.isChromeVisible && uiState.value.currentUrl == null ->
+                pendingEffect = Effect.Exit
             uiState.value.isChromeVisible -> updateChromeVisibility(isVisible = false)
             uiState.value.canGoBack -> pendingEffect = Effect.GoBack
             else -> pendingEffect = Effect.Exit
