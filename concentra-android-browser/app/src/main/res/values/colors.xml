@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="concentra_primary">#0F766E</color>
+    <color name="concentra_on_primary">#FFFFFF</color>
+    <color name="concentra_background">#F8FAFC</color>
+    <color name="concentra_on_background">#111827</color>
+</resources>
