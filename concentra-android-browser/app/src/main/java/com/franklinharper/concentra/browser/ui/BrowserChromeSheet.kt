@@ -15,6 +15,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
@@ -25,6 +29,7 @@ import com.franklinharper.concentra.browser.model.BrowserUiState
 fun BrowserChromeSheet(
     uiState: BrowserUiState,
     urlInput: String,
+    requestInitialFocus: Boolean,
     onUrlInputChange: (String) -> Unit,
     onUrlSubmit: () -> Unit,
     onGoogleClick: () -> Unit,
@@ -35,6 +40,14 @@ fun BrowserChromeSheet(
     onExitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(requestInitialFocus) {
+        if (requestInitialFocus) {
+            focusRequester.requestFocus()
+        }
+    }
+
     Surface(
         modifier =
             modifier
@@ -57,6 +70,7 @@ fun BrowserChromeSheet(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .focusRequester(focusRequester)
                         .testTag(BrowserScreenTags.UrlField),
                 label = { Text("Address") },
                 singleLine = true,

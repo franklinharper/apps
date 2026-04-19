@@ -2,7 +2,9 @@ package com.franklinharper.concentra.browser.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import com.franklinharper.concentra.browser.BrowserActivity
@@ -17,7 +19,7 @@ class BrowserScreenTest {
     fun empty_launch_shows_chrome() {
         composeRule.onNodeWithTag(BrowserScreenTags.ChromeSheet).assertIsDisplayed()
         composeRule.onNodeWithTag(BrowserScreenTags.UrlField).assertIsDisplayed()
-        composeRule.onNodeWithTag(BrowserScreenTags.HotspotOverlay).assertIsDisplayed()
+        composeRule.onAllNodesWithTag(BrowserScreenTags.HotspotOverlay).assertCountEquals(0)
     }
 
     @Test

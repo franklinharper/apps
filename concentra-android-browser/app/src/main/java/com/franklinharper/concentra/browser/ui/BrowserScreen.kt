@@ -63,6 +63,7 @@ fun BrowserScreen(
             BrowserChromeSheet(
                 uiState = uiState,
                 urlInput = urlInput,
+                requestInitialFocus = uiState.currentUrl == null,
                 onUrlInputChange = onUrlInputChange,
                 onUrlSubmit = onUrlSubmit,
                 onGoogleClick = onGoogleClick,
@@ -79,13 +80,15 @@ fun BrowserScreen(
             )
         }
 
-        HotspotOverlay(
-            modifier =
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(end = 16.dp, bottom = 16.dp),
-        )
+        if (!uiState.isChromeVisible) {
+            HotspotOverlay(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .navigationBarsPadding()
+                        .padding(end = 16.dp, bottom = 16.dp),
+            )
+        }
     }
 }
 
