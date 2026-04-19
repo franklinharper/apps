@@ -197,8 +197,13 @@ private fun ShapeRow(stat: ShapeStat) {
 private fun AfterGuessStep(step: CoachingStep.AfterGuess) {
     val totalAnswers = WordShapeStats.stats.sumOf { it.count }
     val pct = step.remainingAnswers.size.toDouble() / totalAnswers * 100.0
+    val scrollState = rememberScrollState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState),
+    ) {
         Text(
             text = "Step ${step.guessNumber + 1} — After guess ${step.guessNumber}: ${step.guess.word}",
             style = MaterialTheme.typography.titleMedium,
