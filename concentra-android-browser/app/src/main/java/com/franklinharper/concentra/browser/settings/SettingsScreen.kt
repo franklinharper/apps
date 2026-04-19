@@ -21,7 +21,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,23 +61,31 @@ fun SettingsScreen(
                     .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Third-party cookies")
-                    Text("Disabled by default. Enable only for sites that require it.")
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text("Third-party cookies")
+                        Text("Disabled by default. Enable only for sites that require it.")
+                    }
+                    Switch(
+                        checked = uiState.thirdPartyCookiesEnabled,
+                        onCheckedChange = onThirdPartyCookiesChanged,
+                    )
                 }
-                Switch(
-                    checked = uiState.thirdPartyCookiesEnabled,
-                    onCheckedChange = onThirdPartyCookiesChanged,
-                )
             }
+            Text(
+                text = "Version 0.1",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
         }
     }
 }
