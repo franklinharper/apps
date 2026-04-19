@@ -4,6 +4,18 @@
 
   if (typeof window.Android === 'undefined') return;
 
+  // Sites detect WebAuthn support via window.PublicKeyCredential.
+  // WebView doesn't provide it, so we define it here.
+  if (typeof window.PublicKeyCredential === 'undefined') {
+    window.PublicKeyCredential = function PublicKeyCredential() {};
+    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = function () {
+      return Promise.resolve(true);
+    };
+    window.PublicKeyCredential.isExternalCTAP2SecurityKeySupported = function () {
+      return Promise.resolve(false);
+    };
+  }
+
   var pendingRequests = new Map();
 
   window.__passkeyResolve = function (requestId, resultJson) {
