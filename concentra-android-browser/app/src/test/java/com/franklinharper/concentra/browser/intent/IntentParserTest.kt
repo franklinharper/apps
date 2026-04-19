@@ -38,7 +38,7 @@ class IntentParserTest {
             type = "text/plain"
             putExtra(
                 Intent.EXTRA_TEXT,
-                "Read this https://example.com/page and also https://example.com/second"
+                "See https://example.com/page). and also https://example.com/second,"
             )
         }
 

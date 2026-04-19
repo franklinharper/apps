@@ -5,6 +5,7 @@ import com.franklinharper.concentra.browser.model.LaunchRequest
 
 class IntentParser {
     private val urlPattern = Regex("https?://[^\\s]+")
+    private val trailingPunctuation = charArrayOf(')', '.', ',', ']', '}', ';', ':', '!', '?')
 
     fun parse(intent: Intent?): LaunchRequest {
         if (intent == null) {
@@ -25,7 +26,8 @@ class IntentParser {
         }
 
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return LaunchRequest.Empty
-        val url = urlPattern.find(sharedText)?.value ?: return LaunchRequest.Empty
+        val url = urlPattern.find(sharedText)?.value?.trimEnd(*trailingPunctuation)
+            ?: return LaunchRequest.Empty
 
         return LaunchRequest.OpenUrl(url)
     }
