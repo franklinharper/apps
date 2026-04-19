@@ -2,14 +2,14 @@
 
 ## Overview
 
-Concentra is an Android browser app focused on distraction-free, full-screen web viewing with browser controls hidden by default. The browser chrome is presented as a bottom sheet that the user reveals with a swipe-up gesture from a small bottom hotspot. When launched without a URL, the browser opens into an empty start state with the chrome shown immediately and the URL field focused. When launched with a URL, the page loads full-screen and the chrome remains hidden until summoned.
+Concentra is an Android browser app focused on distraction-free, edge-to-edge web viewing with browser controls hidden by default while the Android status bar remains visible. The browser chrome is presented as a bottom sheet that the user reveals with a swipe-up gesture from a small bottom-right hotspot. When launched without a URL, the browser opens into an empty start state with the chrome shown immediately and the URL field focused. When launched with a URL, the page loads full-screen and the chrome remains hidden until summoned.
 
 The first version is a single-session, single-WebView browser implemented in Kotlin using Jetpack Compose, MVVM, manual dependency injection, Material Design, and red-green TDD. It supports direct URL launches, share-target URL ingestion, downloads via Android `DownloadManager`, JavaScript dialogs, pinch-to-zoom, and a minimal settings surface with a third-party cookie toggle.
 
 ## Goals
 
 - Provide a full-screen Android browsing experience with no persistent browser chrome.
-- Reveal browser controls only through a deliberate gesture that minimally interferes with web content.
+- Reveal browser controls only through a deliberate gesture from a constrained hotspot that minimally interferes with web content.
 - Support direct launch URLs and shared URLs while keeping behavior deterministic and single-session.
 - Support common browser essentials: navigation, URL entry, downloads, sharing, find-in-page, JavaScript dialogs, cookies, and storage.
 - Keep the architecture small, testable, and aligned with the requested stack.
@@ -39,9 +39,10 @@ The first version is a single-session, single-WebView browser implemented in Kot
 
 ### Chrome Reveal And Dismissal
 
-- The browser runs full-screen by default.
-- A small bottom hotspot overlays the bottom edge of the screen.
+- The browser runs edge-to-edge by default while keeping the Android status bar visible.
+- A small semi-transparent hotspot overlays the bottom-right corner of the screen.
 - Swiping up from that hotspot reveals the browser chrome bottom sheet.
+- Taps on the hotspot do nothing.
 - Tapping outside the chrome dismisses it.
 - Android system Back behavior:
   1. If chrome is visible, close the chrome.
@@ -64,11 +65,11 @@ The bottom sheet contains:
 ### Action Semantics
 
 - `Google`: immediately loads `https://google.com`
-- `Archive Today`: immediately loads `https://archive.ph/<current-url>`
-- `Share Link`: immediately opens the Android system share UI with the current URL
-- `Find In Page`: immediately opens in-page find UI and drives WebView find APIs
+- `Archive Today`: immediately loads `https://archive.ph/<current-url>` when a current URL exists; otherwise it is visible but disabled
+- `Share Link`: immediately opens the Android system share UI with the current URL when a current URL exists; otherwise it is visible but disabled
+- `Find In Page`: immediately opens in-page find UI and drives WebView find APIs when a current page exists; otherwise it is visible but disabled
 - `Exit`: immediately closes the app
-- `Settings`: opens a minimal settings surface in v1
+- `Settings`: opens a separate settings screen in v1
 
 ### Share Target Behavior
 
@@ -183,17 +184,19 @@ Implementation responsibilities:
 
 ### Full-Screen Surface
 
-The web page occupies the full available screen. The browser does not reserve space for persistent controls during normal browsing.
+The web page occupies the full available screen in an edge-to-edge layout. The browser does not reserve space for persistent controls during normal browsing, and the Android status bar remains visible at the top.
 
 ### Bottom Hotspot
 
 The chrome reveal hotspot must be:
 
-- Bottom-anchored
+- Anchored to the bottom-right corner
+- `64dp x 64dp`
+- Semi-transparent so it is visible without dominating the page
 - Narrow enough to minimize interference with page interaction
 - Large enough to remain usable
 
-Only the hotspot intercepts the reveal gesture. The rest of the page should behave like a normal browser surface.
+Only the hotspot intercepts the upward reveal gesture. Taps on the hotspot are ignored. The rest of the page should behave like a normal browser surface.
 
 ### Start State
 
@@ -207,13 +210,13 @@ This is not a home page; it is a blank entry state.
 
 ### Settings Surface
 
-v1 requires a minimal settings surface rather than a placeholder.
+v1 requires a real settings screen rather than a placeholder action.
 
 Initial content:
 
 - `Enable third-party cookies` switch
 
-The settings surface can be implemented as a small screen, sheet, or dialog depending on what fits the Compose shell cleanly. The implementation plan should choose the smallest option that keeps state and back behavior simple.
+The settings surface is a separate screen reached from the browser chrome. The implementation plan should keep this screen minimal and consistent with the single-activity architecture.
 
 ## Intent Handling
 
@@ -296,7 +299,7 @@ Risk:
 - A reveal gesture can conflict with web content interaction.
 
 Mitigation:
-- Restrict interception to a small bottom hotspot rather than global gesture capture.
+- Restrict interception to a `64dp x 64dp` bottom-right hotspot rather than global gesture capture or a full-width bottom strip.
 
 ### WebView Complexity
 
