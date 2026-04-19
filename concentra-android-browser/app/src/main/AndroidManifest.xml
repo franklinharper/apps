@@ -12,6 +12,9 @@
             android:name=".settings.SettingsActivity"
             android:exported="false" />
         <activity
+            android:name=".settings.DebugActivity"
+            android:exported="false" />
+        <activity
             android:name=".BrowserActivity"
             android:exported="true">
             <intent-filter>
