@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,7 +15,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.unit.dp
 import com.franklinharper.concentra.browser.model.BrowserUiState
 import com.franklinharper.concentra.browser.BrowserViewModel
 import com.franklinharper.concentra.browser.web.WebViewCommand
@@ -68,22 +65,8 @@ fun BrowserScreen(
             onCommandConsumed = onWebCommandConsumed,
             onEffectConsumed = onWebEffectConsumed,
             onEvent = onWebViewEvent,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().statusBarsPadding(),
         )
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
-        ) {
-            Text(
-                text = uiState.currentUrl ?: "Browser shell",
-                color = Color(0xFF4A443C),
-                modifier = Modifier.align(Alignment.TopStart),
-            )
-        }
 
         if (uiState.isChromeVisible) {
             Column(
@@ -126,8 +109,7 @@ fun BrowserScreen(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .navigationBarsPadding()
-                        .padding(end = 16.dp, bottom = 16.dp),
+                        .navigationBarsPadding(),
             )
         }
     }

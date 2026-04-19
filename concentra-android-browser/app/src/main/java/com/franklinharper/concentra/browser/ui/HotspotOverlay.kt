@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -21,18 +22,25 @@ fun HotspotOverlay(
     modifier: Modifier = Modifier,
 ) {
     Box(
+        contentAlignment = Alignment.Center,
         modifier =
             modifier
                 .size(64.dp)
-                .background(
-                    color = Color.Black.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(20.dp),
-                )
                 .pointerInput(onSwipeUp) {
                     detectVerticalSwipeUp(onSwipeUp)
                 }
                 .testTag(BrowserScreenTags.HotspotOverlay),
-    )
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(28.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(10.dp),
+                    ),
+        )
+    }
 }
 
 private suspend fun PointerInputScope.detectVerticalSwipeUp(
