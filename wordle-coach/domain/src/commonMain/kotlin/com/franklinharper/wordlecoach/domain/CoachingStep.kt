@@ -3,7 +3,7 @@ package com.franklinharper.wordlecoach.domain
 sealed class CoachingStep {
 
     /** The state before the player makes their first guess. */
-    object BeforeFirstGuess : CoachingStep()
+    data class BeforeFirstGuess(val guesses: List<CompletedGuess>) : CoachingStep()
 
     /**
      * The state immediately after the player has submitted guess [guessNumber] (1-based).

@@ -13,7 +13,7 @@ class CoachingStateTest {
     }
 
     @Test fun initialStepIsBeforeFirstGuess() {
-        assertEquals(CoachingStep.BeforeFirstGuess, CoachingState.initial().currentStep)
+        assertIs<CoachingStep.BeforeFirstGuess>(CoachingState.initial().currentStep)
     }
 
     @Test fun cannotGoBackFromFirstStep() {
@@ -36,7 +36,10 @@ class CoachingStateTest {
 
     @Test fun canNavigateForwardAndBack() {
         val twoSteps = CoachingState(
-            steps = listOf(CoachingStep.BeforeFirstGuess, CoachingStep.BeforeFirstGuess),
+            steps = listOf(
+                CoachingStep.BeforeFirstGuess(guesses = emptyList()),
+                CoachingStep.BeforeFirstGuess(guesses = emptyList()),
+            ),
             currentStepIndex = 0
         )
         assertFalse(twoSteps.canGoBack)
