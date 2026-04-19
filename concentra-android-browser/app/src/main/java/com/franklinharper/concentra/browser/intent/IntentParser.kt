@@ -4,8 +4,9 @@ import android.content.Intent
 import com.franklinharper.concentra.browser.model.LaunchRequest
 
 class IntentParser {
-    private val urlPattern = Regex("https?://[^\\s]+")
-    private val alwaysTrimmedPunctuation = charArrayOf('.', ',', ';', ':', '!', '?')
+    private val urlPattern = Regex(
+        "https?://(?:[^\\s()<>]+|\\([^\\s()<>]*\\))+(?:\\([^\\s()<>]*\\)|[^\\s`()\\[\\]{}\"'.,<>])"
+    )
 
     fun parse(intent: Intent?): LaunchRequest {
         if (intent == null) {
@@ -36,31 +37,8 @@ class IntentParser {
         }
 
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return LaunchRequest.Empty
-        val url = urlPattern.find(sharedText)?.value?.let(::trimTrailingPunctuation)
-            ?: return LaunchRequest.Empty
+        val url = urlPattern.find(sharedText)?.value ?: return LaunchRequest.Empty
 
         return LaunchRequest.OpenUrl(url)
     }
-
-    private fun trimTrailingPunctuation(value: String): String {
-        var trimmed = value.trimEnd(*alwaysTrimmedPunctuation)
-
-        trimmed = trimUnbalancedClosing(trimmed, ')', '(')
-        trimmed = trimUnbalancedClosing(trimmed, ']', '[')
-        trimmed = trimUnbalancedClosing(trimmed, '}', '{')
-
-        return trimmed
-    }
-
-    private fun trimUnbalancedClosing(value: String, closing: Char, opening: Char): String {
-        var trimmed = value
-
-        while (trimmed.endsWith(closing) && count(trimmed, closing) > count(trimmed, opening)) {
-            trimmed = trimmed.dropLast(1)
-        }
-
-        return trimmed
-    }
-
-    private fun count(value: String, char: Char): Int = value.count { it == char }
 }

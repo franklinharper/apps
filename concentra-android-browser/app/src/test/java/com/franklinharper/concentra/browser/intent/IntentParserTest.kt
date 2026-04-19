@@ -80,4 +80,18 @@ class IntentParserTest {
             parser.parse(intent)
         )
     }
+
+    @Test
+    fun `send intent preserves valid trailing query delimiter`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "Open https://example.com/?")
+        }
+
+        assertEquals(
+            LaunchRequest.OpenUrl("https://example.com/?"),
+            parser.parse(intent)
+        )
+    }
 }
