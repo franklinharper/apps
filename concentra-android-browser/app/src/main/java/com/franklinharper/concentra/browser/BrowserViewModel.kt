@@ -24,7 +24,7 @@ class BrowserViewModel(
 
     fun onAction(action: BrowserAction) = Unit
 
-    fun pendingWebCommand(): String? {
+    fun consumePendingWebCommand(): String? {
         val command = pendingCommand ?: return null
         pendingCommand = null
         return when (command) {

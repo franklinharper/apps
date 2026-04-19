@@ -23,7 +23,10 @@ class BrowserViewModelTest {
         val viewModel = buildViewModel(LaunchRequest.OpenUrl("https://example.com"))
 
         assertFalse(viewModel.uiState.value.isChromeVisible)
-        assertEquals("https://example.com", viewModel.pendingWebCommand())
+        assertNull(viewModel.uiState.value.currentUrl)
+        assertEquals(BrowserSettings(), viewModel.uiState.value.settings)
+        assertEquals("https://example.com", viewModel.consumePendingWebCommand())
+        assertNull(viewModel.consumePendingWebCommand())
     }
 
     @Test
