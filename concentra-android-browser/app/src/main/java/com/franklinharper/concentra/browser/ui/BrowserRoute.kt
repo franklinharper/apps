@@ -92,6 +92,7 @@ fun BrowserRoute(container: BrowserAppContainer) {
     BrowserScreen(
         uiState = uiState,
         urlInput = urlInput,
+        downloadHandler = container.downloadHandler,
         pendingWebCommand = pendingWebCommand,
         pendingWebEffect = pendingWebEffect,
         onWebCommandConsumed = { pendingWebCommand = null },

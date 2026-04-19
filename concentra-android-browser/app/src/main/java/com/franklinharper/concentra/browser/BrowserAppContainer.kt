@@ -5,6 +5,7 @@ import com.franklinharper.concentra.browser.intent.IntentParser
 import com.franklinharper.concentra.browser.model.LaunchRequest
 import com.franklinharper.concentra.browser.settings.PreferencesSettingsRepository
 import com.franklinharper.concentra.browser.settings.SettingsRepository
+import com.franklinharper.concentra.browser.web.BrowserDownloadHandler
 
 class BrowserAppContainer(
     activity: BrowserActivity,
@@ -19,6 +20,8 @@ class BrowserAppContainer(
         )
 
     val launchRequest: LaunchRequest = intentParser.parse(activity.intent)
+
+    val downloadHandler: BrowserDownloadHandler = BrowserDownloadHandler(appContext)
 
     private companion object {
         const val PREFERENCES_NAME = "browser_settings"

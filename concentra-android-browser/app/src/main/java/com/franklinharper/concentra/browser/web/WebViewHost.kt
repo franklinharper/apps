@@ -18,6 +18,7 @@ import com.franklinharper.concentra.browser.settings.BrowserSettings
 @Composable
 fun WebViewHost(
     settings: BrowserSettings,
+    downloadHandler: BrowserDownloadHandler,
     command: WebViewCommand?,
     effect: BrowserViewModel.Effect?,
     onCommandConsumed: () -> Unit,
@@ -69,6 +70,14 @@ fun WebViewHost(
                 layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                 webChromeClient = BrowserWebChromeClient()
                 webViewClient = BrowserWebViewClient(onEvent = onEvent)
+                setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+                    downloadHandler.enqueue(
+                        url = url,
+                        userAgent = userAgent,
+                        contentDisposition = contentDisposition,
+                        mimeType = mimeType,
+                    )
+                }
                 settings.applyTo(
                     webView = this,
                     configurator = configurator,

@@ -22,11 +22,13 @@ import com.franklinharper.concentra.browser.BrowserViewModel
 import com.franklinharper.concentra.browser.web.WebViewCommand
 import com.franklinharper.concentra.browser.web.WebViewEvent
 import com.franklinharper.concentra.browser.web.WebViewHost
+import com.franklinharper.concentra.browser.web.BrowserDownloadHandler
 
 @Composable
 fun BrowserScreen(
     uiState: BrowserUiState,
     urlInput: String,
+    downloadHandler: BrowserDownloadHandler,
     pendingWebCommand: WebViewCommand?,
     pendingWebEffect: BrowserViewModel.Effect?,
     onWebCommandConsumed: () -> Unit,
@@ -59,6 +61,7 @@ fun BrowserScreen(
     ) {
         WebViewHost(
             settings = uiState.settings,
+            downloadHandler = downloadHandler,
             command = pendingWebCommand,
             effect = pendingWebEffect,
             onCommandConsumed = onWebCommandConsumed,
