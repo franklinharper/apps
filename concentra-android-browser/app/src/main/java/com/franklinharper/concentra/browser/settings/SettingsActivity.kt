@@ -1,6 +1,7 @@
 package com.franklinharper.concentra.browser.settings
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,13 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.compose.runtime.collectAsState
 
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +57,9 @@ private fun SettingsApp(activity: SettingsActivity) {
                 uiState = uiState,
                 onBackClick = activity::finish,
                 onThirdPartyCookiesChanged = viewModel::onThirdPartyCookiesChanged,
+                onDebugClick = {
+                    activity.startActivity(Intent(activity, DebugActivity::class.java))
+                },
             )
         }
     }
