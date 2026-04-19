@@ -5,7 +5,8 @@ import com.franklinharper.concentra.browser.model.LaunchRequest
 
 class IntentParser {
     private val urlPattern = Regex(
-        "https?://(?:[^\\s()<>]+|\\([^\\s()<>]*\\))+(?:\\([^\\s()<>]*\\)|[^\\s`()\\[\\]{}\"'.,<>])"
+        pattern = "https?://(?:[^\\s()<>]+|\\([^\\s()<>]*\\))+(?:\\([^\\s()<>]*\\)|[^\\s`()\\[\\]{}\"'.,<>])",
+        option = RegexOption.IGNORE_CASE
     )
 
     fun parse(intent: Intent?): LaunchRequest {
@@ -36,7 +37,8 @@ class IntentParser {
             return LaunchRequest.Empty
         }
 
-        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return LaunchRequest.Empty
+        val sharedText = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+            ?: return LaunchRequest.Empty
         val url = urlPattern.find(sharedText)?.value ?: return LaunchRequest.Empty
 
         return LaunchRequest.OpenUrl(url)

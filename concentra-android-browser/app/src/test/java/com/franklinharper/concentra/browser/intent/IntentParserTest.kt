@@ -68,6 +68,23 @@ class IntentParserTest {
     }
 
     @Test
+    fun `send intent accepts char sequence extra text`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(
+                Intent.EXTRA_TEXT,
+                StringBuilder("Open https://example.com/from-builder") as CharSequence
+            )
+        }
+
+        assertEquals(
+            LaunchRequest.OpenUrl("https://example.com/from-builder"),
+            parser.parse(intent)
+        )
+    }
+
+    @Test
     fun `send intent preserves balanced closing parenthesis in url`() {
         val parser = IntentParser()
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -91,6 +108,20 @@ class IntentParserTest {
 
         assertEquals(
             LaunchRequest.OpenUrl("https://example.com/?"),
+            parser.parse(intent)
+        )
+    }
+
+    @Test
+    fun `send intent accepts uppercase url scheme in shared text`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "Open HTTPS://example.com/Uppercase")
+        }
+
+        assertEquals(
+            LaunchRequest.OpenUrl("HTTPS://example.com/Uppercase"),
             parser.parse(intent)
         )
     }
