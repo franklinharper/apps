@@ -20,7 +20,6 @@ class WebViewConfiguratorTest {
         assertTrue(sink.builtInZoomControlsEnabled)
         assertFalse(sink.displayZoomControlsEnabled)
         assertTrue(sink.supportZoomEnabled)
-        assertTrue(sink.firstPartyCookiesEnabled)
         assertFalse(sink.supportMultipleWindows)
         assertTrue(sink.thirdPartyCookiesEnabled)
     }
@@ -45,6 +44,5 @@ private class FakeWebViewSettingsSink : WebViewConfigurator.SettingsSink {
     override var displayZoomControlsEnabled: Boolean = true
     override var supportZoomEnabled: Boolean = false
     override var supportMultipleWindows: Boolean = true
-    override var firstPartyCookiesEnabled: Boolean = false
     override var thirdPartyCookiesEnabled: Boolean = true
 }

@@ -12,7 +12,6 @@ class WebViewConfigurator {
         sink.builtInZoomControlsEnabled = true
         sink.displayZoomControlsEnabled = false
         sink.supportZoomEnabled = true
-        sink.firstPartyCookiesEnabled = true
         sink.thirdPartyCookiesEnabled = settings.thirdPartyCookiesEnabled
         sink.supportMultipleWindows = false
     }
@@ -24,7 +23,6 @@ class WebViewConfigurator {
         var displayZoomControlsEnabled: Boolean
         var supportZoomEnabled: Boolean
         var supportMultipleWindows: Boolean
-        var firstPartyCookiesEnabled: Boolean
         var thirdPartyCookiesEnabled: Boolean
     }
 }
