@@ -1,5 +1,6 @@
 package com.franklinharper.concentra.browser.web
 
+import android.app.Activity
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.CookieManager
 import android.webkit.WebView
@@ -26,21 +27,38 @@ fun WebViewHost(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val activity = context as? Activity
     val configurator = remember { WebViewConfigurator() }
+    val passkeyManager = remember { PasskeyManager() }
     val currentOnEvent = rememberUpdatedState(onEvent)
     val currentDownloadHandler = rememberUpdatedState(downloadHandler)
+
+    val polyfillJs = remember {
+        context.assets.open("passkey-polyfill.js").bufferedReader().use { it.readText() }
+    }
+
     val webView =
         remember(context) {
             WebView(context).apply {
                 layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                 webChromeClient = BrowserWebChromeClient()
                 webViewClient =
-                    BrowserWebViewClient(onEvent = { event -> currentOnEvent.value(event) })
+                    BrowserWebViewClient(
+                        onEvent = { event -> currentOnEvent.value(event) },
+                        onPageStarted = { view -> view?.evaluateJavascript(polyfillJs, null) },
+                    )
             }
         }
 
+    val bridge = remember(webView) {
+        PasskeyBridge(passkeyManager, webView, activity).also { b ->
+            webView.addJavascriptInterface(b, "Android")
+        }
+    }
+
     DisposableEffect(webView) {
         onDispose {
+            bridge.close()
             webView.destroy()
         }
     }
@@ -79,11 +97,11 @@ fun WebViewHost(
         update = { currentWebView ->
             currentWebView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
                 currentDownloadHandler.value.enqueue(
-                        url = url,
-                        userAgent = userAgent,
-                        contentDisposition = contentDisposition,
-                        mimeType = mimeType,
-                    )
+                    url = url,
+                    userAgent = userAgent,
+                    contentDisposition = contentDisposition,
+                    mimeType = mimeType,
+                )
             }
             settings.applyTo(
                 webView = currentWebView,
