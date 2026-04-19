@@ -44,7 +44,14 @@ class PasskeyBridge(
     }
 
     private fun resolve(requestId: String, responseJson: String) {
-        eval("window.__passkeyResolve('$requestId', $responseJson)")
+        val escaped = responseJson
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\u2028", "\\u2028")
+            .replace("\u2029", "\\u2029")
+        eval("window.__passkeyResolve('$requestId', '$escaped')")
     }
 
     private fun reject(requestId: String, errorType: String, message: String) {
