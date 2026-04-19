@@ -1,5 +1,6 @@
 package com.franklinharper.concentra.browser.web
 
+import android.webkit.WebView
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -27,5 +28,20 @@ class BrowserWebViewClientTest {
             ),
             events,
         )
+    }
+
+    @Test
+    fun `onPageStarted invokes onPageStarted callback with the WebView`() {
+        val capturedViews = mutableListOf<WebView?>()
+        val client = BrowserWebViewClient(
+            onEvent = {},
+            onPageStarted = { view -> capturedViews.add(view) },
+        )
+        val mockView = null  // WebView is hard to instantiate in unit tests; null is valid per the override signature
+
+        client.onPageStarted(mockView, "https://example.com", null)
+
+        assertEquals(1, capturedViews.size)
+        assertEquals(mockView, capturedViews.first())
     }
 }

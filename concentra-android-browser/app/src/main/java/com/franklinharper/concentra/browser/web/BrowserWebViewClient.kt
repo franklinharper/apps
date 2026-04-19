@@ -6,12 +6,14 @@ import android.webkit.WebViewClient
 
 class BrowserWebViewClient(
     private val onEvent: (WebViewEvent) -> Unit,
+    private val onPageStarted: (WebView?) -> Unit = {},
 ) : WebViewClient() {
     override fun onPageStarted(
         view: WebView?,
         url: String?,
         favicon: Bitmap?,
     ) {
+        onPageStarted(view)
         onEvent(WebViewEvent.PageLoadStarted(url = url))
     }
 
