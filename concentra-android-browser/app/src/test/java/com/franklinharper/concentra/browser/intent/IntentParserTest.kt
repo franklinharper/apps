@@ -21,6 +21,13 @@ class IntentParserTest {
     }
 
     @Test
+    fun `null intent returns empty request`() {
+        val parser = IntentParser()
+
+        assertEquals(LaunchRequest.Empty, parser.parse(null))
+    }
+
+    @Test
     fun `view intent returns url request`() {
         val parser = IntentParser()
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com"))
@@ -122,6 +129,23 @@ class IntentParserTest {
 
         assertEquals(
             LaunchRequest.OpenUrl("HTTPS://example.com/Uppercase"),
+            parser.parse(intent)
+        )
+    }
+
+    @Test
+    fun `send intent excludes trailing exclamation semicolon and colon punctuation`() {
+        val parser = IntentParser()
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(
+                Intent.EXTRA_TEXT,
+                "Check these https://example.com! https://example.org; https://example.net:"
+            )
+        }
+
+        assertEquals(
+            LaunchRequest.OpenUrl("https://example.com"),
             parser.parse(intent)
         )
     }

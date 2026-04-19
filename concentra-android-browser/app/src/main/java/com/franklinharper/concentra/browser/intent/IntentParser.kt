@@ -5,7 +5,7 @@ import com.franklinharper.concentra.browser.model.LaunchRequest
 
 class IntentParser {
     private val urlPattern = Regex(
-        pattern = "https?://(?:[^\\s()<>]+|\\([^\\s()<>]*\\))+(?:\\([^\\s()<>]*\\)|[^\\s`()\\[\\]{}\"'.,<>])",
+        pattern = "https?://(?:[^\\s()<>]+|\\([^\\s()<>]*\\))+(?:\\([^\\s()<>]*\\)|[^\\s`()\\[\\]{}\"'.,<>!:;])",
         option = RegexOption.IGNORE_CASE
     )
 
