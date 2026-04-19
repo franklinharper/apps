@@ -2,6 +2,7 @@ package com.franklinharper.concentra.browser.web
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.CredentialManager
@@ -19,14 +20,12 @@ class PasskeyManager(
     fun isSupported(): Boolean = sdkInt >= 26
 
     suspend fun create(activity: Activity?, requestJson: String, origin: String): PasskeyResult {
+        Log.d("PasskeyManager", "create: origin=$origin supported=${isSupported()} hasActivity=${activity != null}")
         if (!isSupported()) return PasskeyResult.NotSupported
         activity ?: return PasskeyResult.Failure("error", "No activity context")
         return try {
             val request = CreatePublicKeyCredentialRequest(
                 requestJson = requestJson,
-                clientDataHash = ByteArray(0),
-                preferImmediatelyAvailableCredentials = false,
-                origin = origin,
             )
             val credentialManager = CredentialManager.create(activity)
             val response = credentialManager.createCredential(activity, request)
@@ -39,16 +38,18 @@ class PasskeyManager(
         } catch (e: CreateCredentialProviderConfigurationException) {
             PasskeyResult.Failure("no_provider", e.message ?: "No passkey provider configured")
         } catch (e: Exception) {
+            Log.e("PasskeyManager", "create failed", e)
             PasskeyResult.Failure("error", e.message ?: "Unknown error")
         }
     }
 
     suspend fun get(activity: Activity?, requestJson: String, origin: String): PasskeyResult {
+        Log.d("PasskeyManager", "get: origin=$origin supported=${isSupported()} hasActivity=${activity != null}")
         if (!isSupported()) return PasskeyResult.NotSupported
         activity ?: return PasskeyResult.Failure("error", "No activity context")
         return try {
             val option = GetPublicKeyCredentialOption(requestJson = requestJson)
-            val request = GetCredentialRequest(listOf(option), origin)
+            val request = GetCredentialRequest(listOf(option))
             val credentialManager = CredentialManager.create(activity)
             val response = credentialManager.getCredential(activity, request)
             val credential = response.credential as PublicKeyCredential
@@ -56,6 +57,7 @@ class PasskeyManager(
         } catch (e: GetCredentialCancellationException) {
             PasskeyResult.Cancelled
         } catch (e: Exception) {
+            Log.e("PasskeyManager", "get failed", e)
             PasskeyResult.Failure("error", e.message ?: "Unknown error")
         }
     }
