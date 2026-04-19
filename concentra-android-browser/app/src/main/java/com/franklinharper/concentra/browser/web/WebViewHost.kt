@@ -64,7 +64,8 @@ fun WebViewHost(
                 onEffectConsumed()
             }
             BrowserViewModel.Effect.OpenFindInPage -> {
-                webView.showFindDialog("", true)
+                @Suppress("DEPRECATION")
+                webView.showFindDialog(null, true)
                 onEffectConsumed()
             }
             null -> Unit
