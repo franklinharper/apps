@@ -43,6 +43,7 @@ fun BrowserRoute(container: BrowserAppContainer) {
                 },
         )
     val uiState by viewModel.uiState.collectAsState()
+    val pendingEffect by viewModel.pendingEffect.collectAsState()
     var urlInput by rememberSaveable { mutableStateOf(uiState.pendingUrlInput) }
     var pendingWebCommand by remember { mutableStateOf<WebViewCommand?>(null) }
     var pendingWebEffect by remember { mutableStateOf<BrowserViewModel.Effect?>(null) }
@@ -66,6 +67,9 @@ fun BrowserRoute(container: BrowserAppContainer) {
 
     LaunchedEffect(uiState) {
         viewModel.consumePendingWebCommand()?.let { pendingWebCommand = it }
+    }
+
+    LaunchedEffect(pendingEffect) {
         viewModel.consumePendingEffect()?.let { effect ->
             when (effect) {
                 is BrowserViewModel.Effect.ShareUrl -> {

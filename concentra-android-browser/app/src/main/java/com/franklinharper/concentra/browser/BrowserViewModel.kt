@@ -28,7 +28,8 @@ class BrowserViewModel(
             LaunchRequest.Empty -> null
         }
 
-    private var pendingEffect: Effect? = null
+    private val _pendingEffect = MutableStateFlow<Effect?>(null)
+    val pendingEffect: StateFlow<Effect?> = _pendingEffect.asStateFlow()
 
     fun onAction(action: BrowserAction) {
         when (action) {
@@ -40,15 +41,15 @@ class BrowserViewModel(
             }
             BrowserAction.ShareLinkClicked -> {
                 val currentUrl = uiState.value.currentUrl ?: return
-                pendingEffect = Effect.ShareUrl(currentUrl)
+                _pendingEffect.value = Effect.ShareUrl(currentUrl)
             }
             BrowserAction.FindInPageClicked -> {
                 if (uiState.value.currentUrl != null) {
-                    pendingEffect = Effect.OpenFindInPage
+                    _pendingEffect.value = Effect.OpenFindInPage
                 }
             }
-            BrowserAction.OpenSettingsClicked -> pendingEffect = Effect.OpenSettings
-            BrowserAction.ExitClicked -> pendingEffect = Effect.Exit
+            BrowserAction.OpenSettingsClicked -> _pendingEffect.value = Effect.OpenSettings
+            BrowserAction.ExitClicked -> _pendingEffect.value = Effect.Exit
             BrowserAction.BackPressed -> handleBackPressed()
             BrowserAction.ShowChrome -> updateChromeVisibility(isVisible = true)
             BrowserAction.HideChrome -> updateChromeVisibility(isVisible = false)
@@ -97,8 +98,8 @@ class BrowserViewModel(
     }
 
     fun consumePendingEffect(): Effect? {
-        val effect = pendingEffect ?: return null
-        pendingEffect = null
+        val effect = _pendingEffect.value ?: return null
+        _pendingEffect.value = null
         return effect
     }
 
@@ -153,10 +154,10 @@ class BrowserViewModel(
     private fun handleBackPressed() {
         when {
             uiState.value.isChromeVisible && uiState.value.currentUrl == null ->
-                pendingEffect = Effect.Exit
+                _pendingEffect.value = Effect.Exit
             uiState.value.isChromeVisible -> updateChromeVisibility(isVisible = false)
-            uiState.value.canGoBack -> pendingEffect = Effect.GoBack
-            else -> pendingEffect = Effect.Exit
+            uiState.value.canGoBack -> _pendingEffect.value = Effect.GoBack
+            else -> _pendingEffect.value = Effect.Exit
         }
     }
 
