@@ -89,7 +89,6 @@ fun BrowserScreen(
                 BrowserChromeSheet(
                     uiState = uiState,
                     urlInput = urlInput,
-                    requestInitialFocus = uiState.currentUrl == null,
                     onUrlInputChange = onUrlInputChange,
                     onUrlSubmit = onUrlSubmit,
                     onGoogleClick = onGoogleClick,

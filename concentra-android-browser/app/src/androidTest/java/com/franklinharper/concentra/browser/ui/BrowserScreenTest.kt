@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performTouchInput
@@ -35,8 +36,8 @@ class BrowserScreenTest {
     @Test
     fun archive_share_find_are_disabled_without_url() {
         composeRule.onNodeWithText("Archive").assertIsDisplayed().assertIsNotEnabled()
-        composeRule.onNodeWithText("Share").assertIsDisplayed().assertIsNotEnabled()
-        composeRule.onNodeWithText("Find").assertIsDisplayed().assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Share").assertIsDisplayed().assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Find in page").assertIsDisplayed().assertIsNotEnabled()
     }
 
     @Test

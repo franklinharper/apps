@@ -15,24 +15,21 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -42,7 +39,6 @@ import com.franklinharper.concentra.browser.model.BrowserUiState
 fun BrowserChromeSheet(
     uiState: BrowserUiState,
     urlInput: String,
-    requestInitialFocus: Boolean,
     onUrlInputChange: (String) -> Unit,
     onUrlSubmit: () -> Unit,
     onGoogleClick: () -> Unit,
@@ -53,14 +49,6 @@ fun BrowserChromeSheet(
     onExitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val focusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(requestInitialFocus) {
-        if (requestInitialFocus) {
-            focusRequester.requestFocus()
-        }
-    }
-
     Surface(
         modifier =
             modifier
@@ -79,9 +67,27 @@ fun BrowserChromeSheet(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                OutlinedButton(onClick = onExitClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(ButtonDefaults.IconSize)
+                            .graphicsLayer { scaleX = -1f },
+                    )
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text("Exit browser")
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onShareClick, enabled = uiState.isShareEnabled) {
+                    Icon(Icons.Filled.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.onSurface)
+                }
+                IconButton(onClick = onFindClick, enabled = uiState.isFindInPageEnabled) {
+                    Icon(Icons.Filled.Search, contentDescription = "Find in page", tint = MaterialTheme.colorScheme.onSurface)
+                }
                 IconButton(onClick = onSettingsClick) {
                     Icon(Icons.Filled.Settings, contentDescription = "Settings")
                 }
@@ -93,7 +99,6 @@ fun BrowserChromeSheet(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .focusRequester(focusRequester)
                         .testTag(BrowserScreenTags.UrlField),
                 label = { Text("Address") },
                 singleLine = true,
@@ -125,38 +130,6 @@ fun BrowserChromeSheet(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(onClick = onShareClick, enabled = uiState.isShareEnabled) {
-                    Icon(
-                        Icons.Filled.Share,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                    Text("Share")
-                }
-                OutlinedButton(onClick = onFindClick, enabled = uiState.isFindInPageEnabled) {
-                    Icon(
-                        Icons.Filled.FindInPage,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                    Text("Find")
-                }
-                OutlinedButton(onClick = onExitClick) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                    Text("Exit")
-                }
-            }
         }
     }
 }
