@@ -1,5 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="@android:color/white" />
-</shape>
+<!--
+  Concentra Browser adaptive icon foreground.
+
+  "Focus reticle" design: concentric rings + crosshair lines + center dot.
+  Represents concentrated, distraction-free browsing.
+
+  Coordinate system: 108x108dp, center at (54,54).
+  Safe zone: 72dp diameter (36dp radius).
+  Outer ring: 33dp radius, 3.6dp stroke
+  Inner ring: 19.5dp radius, 2.8dp stroke
+  Center dot: 6.5dp radius
+  Crosshair bars: 2.8dp wide, between outer and inner ring edges
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer ring: filled circle R=36.6 minus inner circle R=33 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M54,17.4 A36.6,36.6,0,1,1,53.9,17.4 Z
+            M54,21 A33,33,0,1,0,54.1,21 Z"
+        android:fillType="evenOdd" />
+
+    <!-- Inner ring: filled circle R=22.3 minus inner circle R=19.5 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M54,31.7 A22.3,22.3,0,1,1,53.9,31.7 Z
+            M54,34.5 A19.5,19.5,0,1,0,54.1,34.5 Z"
+        android:fillType="evenOdd" />
+
+    <!-- Top crosshair bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52.6,17.4 L55.4,17.4 L55.4,34.5 L52.6,34.5 Z" />
+
+    <!-- Bottom crosshair bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52.6,73.5 L55.4,73.5 L55.4,90.6 L52.6,90.6 Z" />
+
+    <!-- Left crosshair bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M17.4,52.6 L34.5,52.6 L34.5,55.4 L17.4,55.4 Z" />
+
+    <!-- Right crosshair bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M73.5,52.6 L90.6,52.6 L90.6,55.4 L73.5,55.4 Z" />
+
+    <!-- Center dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,47.5 A6.5,6.5,0,1,1,53.9,47.5 A6.5,6.5,0,1,1,54,47.5 Z" />
+
+</vector>
