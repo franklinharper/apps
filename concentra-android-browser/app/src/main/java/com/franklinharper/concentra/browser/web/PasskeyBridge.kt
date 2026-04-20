@@ -1,68 +1,43 @@
 package com.franklinharper.concentra.browser.web
 
-import android.content.Context
+import android.app.Activity
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class PasskeyBridge(
-    private val context: Context,
     private val webView: WebView,
+    private val activity: Activity?,
 ) {
     private val tag = "PasskeyBridge"
     private val passkeyManager = PasskeyManager()
-    private var pendingCreateRequestId: String? = null
-    private var pendingGetRequestId: String? = null
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-    var launchIntentCallback: ((android.app.PendingIntent, Int) -> Unit)? = null
+    fun close() = scope.cancel()
 
     @JavascriptInterface
     fun passkeyCreate(requestId: String, json: String, origin: String) {
         Log.d(tag, "passkeyCreate: requestId=$requestId origin=$origin json=${json.take(200)}")
-        val result = passkeyManager.create(context, json, origin)
-        Log.d(tag, "passkeyCreate result: $result")
-        when (result) {
-            is PasskeyResult.LaunchIntent -> {
-                pendingCreateRequestId = requestId
-                launchIntentCallback?.invoke(result.pendingIntent, result.requestCode)
-            }
-            else -> sendResult(requestId, result)
+        scope.launch {
+            val result = passkeyManager.create(activity, json, origin)
+            Log.d(tag, "passkeyCreate result: $result")
+            sendResult(requestId, result)
         }
     }
 
     @JavascriptInterface
     fun passkeyGet(requestId: String, json: String, origin: String) {
         Log.d(tag, "passkeyGet: requestId=$requestId origin=$origin json=${json.take(200)}")
-        val result = passkeyManager.get(context, json, origin)
-        Log.d(tag, "passkeyGet result: $result")
-        when (result) {
-            is PasskeyResult.LaunchIntent -> {
-                pendingGetRequestId = requestId
-                launchIntentCallback?.invoke(result.pendingIntent, result.requestCode)
-            }
-            else -> sendResult(requestId, result)
+        scope.launch {
+            val result = passkeyManager.get(activity, json, origin)
+            Log.d(tag, "passkeyGet result: $result")
+            sendResult(requestId, result)
         }
-    }
-
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
-        Log.d(tag, "onActivityResult: requestCode=$requestCode resultCode=$resultCode")
-        if (data == null) {
-            val requestId = when (requestCode) {
-                PasskeyManager.REGISTER_REQUEST_CODE -> pendingCreateRequestId
-                PasskeyManager.SIGN_REQUEST_CODE -> pendingGetRequestId
-                else -> null
-            }
-            if (requestId != null) sendResult(requestId, PasskeyResult.Cancelled)
-            return
-        }
-
-        val result = PasskeyManager.handleResult(data)
-        val requestId = when (requestCode) {
-            PasskeyManager.REGISTER_REQUEST_CODE -> pendingCreateRequestId.also { pendingCreateRequestId = null }
-            PasskeyManager.SIGN_REQUEST_CODE -> pendingGetRequestId.also { pendingGetRequestId = null }
-            else -> null
-        }
-        if (requestId != null) sendResult(requestId, result)
     }
 
     private fun sendResult(requestId: String, result: PasskeyResult) {
@@ -70,9 +45,8 @@ class PasskeyBridge(
         when (result) {
             is PasskeyResult.Success -> resolve(requestId, result.responseJson)
             is PasskeyResult.Cancelled -> reject(requestId, "cancelled", "User cancelled")
-            is PasskeyResult.NotSupported -> reject(requestId, "not_supported", "Passkeys require API 23+")
+            is PasskeyResult.NotSupported -> reject(requestId, "not_supported", "Passkeys require API 26+")
             is PasskeyResult.Failure -> reject(requestId, result.errorType, result.message)
-            is PasskeyResult.LaunchIntent -> {}
         }
     }
 

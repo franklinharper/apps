@@ -4,8 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,42 +14,22 @@ import com.franklinharper.concentra.browser.ui.BrowserRoute
 import com.franklinharper.concentra.browser.web.PasskeyBridge
 
 class BrowserActivity : ComponentActivity() {
-    private var passkeyBridge: PasskeyBridge? = null
-    private var currentFidoRequestCode: Int = -1
-
-    private val fidoLauncher = registerForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        passkeyBridge?.onActivityResult(currentFidoRequestCode, result.resultCode, result.data)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            BrowserApp(
-                activity = this,
-                onBridgeCreated = { bridge ->
-                    passkeyBridge = bridge
-                    bridge.launchIntentCallback = { pendingIntent, requestCode ->
-                        currentFidoRequestCode = requestCode
-                        fidoLauncher.launch(
-                            IntentSenderRequest.Builder(pendingIntent.intentSender).build()
-                        )
-                    }
-                },
-            )
+            BrowserApp(activity = this)
         }
     }
 }
 
 @Composable
-private fun BrowserApp(activity: BrowserActivity, onBridgeCreated: (PasskeyBridge) -> Unit) {
+private fun BrowserApp(activity: BrowserActivity) {
     val container = remember(activity) { BrowserAppContainer(activity) }
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
-            BrowserRoute(container = container, onBridgeCreated = onBridgeCreated)
+            BrowserRoute(container = container, onBridgeCreated = {})
         }
     }
 }

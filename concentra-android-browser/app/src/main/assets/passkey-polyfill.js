@@ -2,7 +2,11 @@
 (function () {
   'use strict';
 
-  if (typeof window.Android === 'undefined') return;
+  if (typeof window.Android === 'undefined') {
+    console.log('[PasskeyPolyfill] window.Android is undefined, skipping');
+    return;
+  }
+  console.log('[PasskeyPolyfill] window.Android found, installing polyfill');
 
   // Sites detect WebAuthn support via window.PublicKeyCredential.
   // WebView doesn't provide it, so we define it here.
@@ -130,28 +134,46 @@
     value: {
       create: function (options) {
         if (!options || !options.publicKey) {
+          console.log('[PasskeyPolyfill] create: no publicKey, delegating to original');
           return originalCredentials.create(options);
         }
         return new Promise(function (resolve, reject) {
           var requestId = crypto.randomUUID();
+          var serialized = serializeCreateOptions(options);
+          console.log('[PasskeyPolyfill] create: requestId=' + requestId + ' origin=' + window.location.origin + ' json=' + serialized.substring(0, 200));
           pendingRequests.set(requestId, {
-            resolve: function (json) { resolve(deserializeCreateResponse(json)); },
-            reject: reject
+            resolve: function (json) {
+              console.log('[PasskeyPolyfill] create resolved: ' + json.substring(0, 200));
+              resolve(deserializeCreateResponse(json));
+            },
+            reject: function (err) {
+              console.log('[PasskeyPolyfill] create rejected: ' + err.message);
+              reject(err);
+            }
           });
-          window.Android.passkeyCreate(requestId, serializeCreateOptions(options), window.location.origin);
+          window.Android.passkeyCreate(requestId, serialized, window.location.origin);
         });
       },
       get: function (options) {
         if (!options || !options.publicKey) {
+          console.log('[PasskeyPolyfill] get: no publicKey, delegating to original');
           return originalCredentials.get(options);
         }
         return new Promise(function (resolve, reject) {
           var requestId = crypto.randomUUID();
+          var serialized = serializeGetOptions(options);
+          console.log('[PasskeyPolyfill] get: requestId=' + requestId + ' origin=' + window.location.origin + ' json=' + serialized.substring(0, 200));
           pendingRequests.set(requestId, {
-            resolve: function (json) { resolve(deserializeGetResponse(json)); },
-            reject: reject
+            resolve: function (json) {
+              console.log('[PasskeyPolyfill] get resolved: ' + json.substring(0, 200));
+              resolve(deserializeGetResponse(json));
+            },
+            reject: function (err) {
+              console.log('[PasskeyPolyfill] get rejected: ' + err.message);
+              reject(err);
+            }
           });
-          window.Android.passkeyGet(requestId, serializeGetOptions(options), window.location.origin);
+          window.Android.passkeyGet(requestId, serialized, window.location.origin);
         });
       },
       store: originalCredentials ? originalCredentials.store.bind(originalCredentials) : undefined,

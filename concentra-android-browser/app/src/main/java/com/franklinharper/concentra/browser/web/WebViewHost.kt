@@ -3,6 +3,7 @@ package com.franklinharper.concentra.browser.web
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.CookieManager
 import android.webkit.WebView
+import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +53,7 @@ fun WebViewHost(
         }
 
     val bridge = remember(webView) {
-        PasskeyBridge(context, webView).also { b ->
+        PasskeyBridge(webView, context as? Activity).also { b ->
             webView.addJavascriptInterface(b, "Android")
             onBridgeCreated(b)
         }

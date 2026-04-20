@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.franklinharper.concentra.browser.BuildConfig
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -99,7 +100,7 @@ fun SettingsScreen(
                 )
             }
             Text(
-                text = "Version 0.1",
+                text = "Version ${BuildConfig.VERSION_NAME}",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
