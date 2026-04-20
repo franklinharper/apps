@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Concentra Browser adaptive icon foreground.
-
-  "Focus reticle" design: concentric rings + crosshair lines + center dot.
-  Represents concentrated, distraction-free browsing.
-
-  Coordinate system: 108x108dp, center at (54,54).
-  Safe zone: 72dp diameter (36dp radius).
-  Outer ring: 33dp radius, 3.6dp stroke
-  Inner ring: 19.5dp radius, 2.8dp stroke
-  Center dot: 6.5dp radius
-  Crosshair bars: 2.8dp wide, between outer and inner ring edges
+  Concentra Browser monochrome icon for themed icons (Android 13+).
+  Single-color version of the "focus reticle" foreground design.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -18,7 +9,7 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Outer ring: filled circle R=36.6 minus inner circle R=33 -->
+    <!-- Outer ring -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="
@@ -26,7 +17,7 @@
             M54,21 A33,33,0,1,0,54.1,21 Z"
         android:fillType="evenOdd" />
 
-    <!-- Inner ring: filled circle R=22.3 minus inner circle R=19.5 -->
+    <!-- Inner ring -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="
