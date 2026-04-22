@@ -8,12 +8,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.franklinharper.concentra.browser.model.BrowserUiState
@@ -23,6 +33,7 @@ import com.franklinharper.concentra.browser.web.WebViewCommand
 import com.franklinharper.concentra.browser.web.WebViewEvent
 import com.franklinharper.concentra.browser.web.WebViewHost
 import com.franklinharper.concentra.browser.web.BrowserDownloadHandler
+import kotlin.math.abs
 
 @Composable
 fun BrowserScreen(
@@ -46,6 +57,12 @@ fun BrowserScreen(
     onChromeScrimTap: () -> Unit,
     onBridgeCreated: (PasskeyBridge) -> Unit = {},
 ) {
+    val density = LocalDensity.current
+    val hotspotSizePx = with(density) { 64.dp.toPx() }
+    val bottomInsetPx =
+        WindowInsets.navigationBars.getBottom(density) +
+            WindowInsets.ime.getBottom(density)
+
     Box(
         modifier =
             Modifier
@@ -55,6 +72,19 @@ fun BrowserScreen(
                         Brush.verticalGradient(
                             colors = listOf(Color(0xFFE9E2D6), Color(0xFFF7F2EA)),
                         ),
+                )
+                .then(
+                    if (!uiState.isChromeVisible) {
+                        Modifier.pointerInput(hotspotSizePx, bottomInsetPx) {
+                            detectHotspotSwipeUp(
+                                hotspotSizePx = hotspotSizePx,
+                                bottomInsetPx = bottomInsetPx,
+                                onSwipeUp = onHotspotSwipeUp,
+                            )
+                        }
+                    } else {
+                        Modifier
+                    },
                 )
                 .semantics {
                     testTagsAsResourceId = true
@@ -108,13 +138,56 @@ fun BrowserScreen(
 
         if (!uiState.isChromeVisible) {
             HotspotOverlay(
-                onSwipeUp = onHotspotSwipeUp,
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .navigationBarsPadding()
-                        .imePadding(),
+                        .navigationBarsPadding(),
             )
+        }
+    }
+}
+
+private suspend fun PointerInputScope.detectHotspotSwipeUp(
+    hotspotSizePx: Float,
+    bottomInsetPx: Int,
+    onSwipeUp: () -> Unit,
+) {
+    val hotspotLeft = size.width - hotspotSizePx
+    val hotspotTop = size.height - bottomInsetPx - hotspotSizePx
+
+    awaitPointerEventScope {
+        while (true) {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            if (down.position.x < hotspotLeft || down.position.y < hotspotTop) continue
+
+            var totalDragY = 0f
+            var totalDragX = 0f
+            val pointer = down.id
+
+            while (true) {
+                val moveEvent = awaitPointerEvent(PointerEventPass.Initial)
+                val change =
+                    moveEvent.changes.firstOrNull { it.id == pointer } ?: break
+                if (!change.pressed) break
+
+                val delta = change.positionChange()
+                totalDragX += delta.x
+                totalDragY += delta.y
+
+                if (totalDragY <= -48f && abs(totalDragY) > abs(totalDragX)) {
+                    change.consume()
+                    onSwipeUp()
+                    // Consume all remaining events until UP to prevent WebView tap
+                    while (true) {
+                        val remaining = awaitPointerEvent(PointerEventPass.Initial)
+                        val remainingChange =
+                            remaining.changes.firstOrNull { it.id == pointer } ?: break
+                        remainingChange.consume()
+                        if (!remainingChange.pressed) break
+                    }
+                    break
+                }
+            }
         }
     }
 }
