@@ -23,6 +23,7 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -58,6 +59,7 @@ fun BrowserScreen(
     onBridgeCreated: (PasskeyBridge) -> Unit = {},
 ) {
     val density = LocalDensity.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val hotspotSizePx = with(density) { 64.dp.toPx() }
     val bottomInsetPx =
         WindowInsets.navigationBars.getBottom(density) +
@@ -80,6 +82,7 @@ fun BrowserScreen(
                                 hotspotSizePx = hotspotSizePx,
                                 bottomInsetPx = bottomInsetPx,
                                 onSwipeUp = onHotspotSwipeUp,
+                                onHideKeyboard = { keyboardController?.hide() },
                             )
                         }
                     } else {
@@ -141,7 +144,8 @@ fun BrowserScreen(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .navigationBarsPadding(),
+                        .navigationBarsPadding()
+                        .imePadding(),
             )
         }
     }
@@ -151,6 +155,7 @@ private suspend fun PointerInputScope.detectHotspotSwipeUp(
     hotspotSizePx: Float,
     bottomInsetPx: Int,
     onSwipeUp: () -> Unit,
+    onHideKeyboard: () -> Unit,
 ) {
     val hotspotLeft = size.width - hotspotSizePx
     val hotspotTop = size.height - bottomInsetPx - hotspotSizePx
@@ -176,6 +181,7 @@ private suspend fun PointerInputScope.detectHotspotSwipeUp(
 
                 if (totalDragY <= -48f && abs(totalDragY) > abs(totalDragX)) {
                     change.consume()
+                    onHideKeyboard()
                     onSwipeUp()
                     // Consume all remaining events until UP to prevent WebView tap
                     while (true) {
