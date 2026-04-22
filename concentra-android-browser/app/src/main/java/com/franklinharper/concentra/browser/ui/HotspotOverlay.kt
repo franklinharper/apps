@@ -25,7 +25,7 @@ fun HotspotOverlay(
             modifier = Modifier
                 .size(28.dp)
                 .background(
-                    color = Color.Black.copy(alpha = 0.2f),
+                    color = Color(0xFFFF4500).copy(alpha = 0.6f),
                     shape = RoundedCornerShape(10.dp),
                 ),
         )

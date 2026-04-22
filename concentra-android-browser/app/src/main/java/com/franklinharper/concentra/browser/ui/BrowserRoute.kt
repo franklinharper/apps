@@ -1,7 +1,9 @@
 package com.franklinharper.concentra.browser.ui
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -111,7 +113,14 @@ fun BrowserRoute(container: BrowserAppContainer, onBridgeCreated: (PasskeyBridge
         onFindClick = { viewModel.onAction(BrowserAction.FindInPageClicked) },
         onSettingsClick = { viewModel.onAction(BrowserAction.OpenSettingsClicked) },
         onExitClick = { viewModel.onAction(BrowserAction.ExitClicked) },
-        onHotspotSwipeUp = { viewModel.onAction(BrowserAction.ShowChrome) },
+        onHotspotSwipeUp = {
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            activity?.currentFocus?.let { view ->
+                imm.hideSoftInputFromWindow(view.windowToken, 0)
+                view.clearFocus()
+            }
+            viewModel.onAction(BrowserAction.ShowChrome)
+        },
         onChromeScrimTap = { viewModel.onAction(BrowserAction.HideChrome) },
         onBridgeCreated = onBridgeCreated,
     )
