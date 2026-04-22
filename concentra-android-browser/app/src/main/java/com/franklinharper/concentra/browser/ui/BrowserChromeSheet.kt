@@ -62,7 +62,7 @@ fun BrowserChromeSheet(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(
@@ -100,7 +100,7 @@ fun BrowserChromeSheet(
                     Modifier
                         .fillMaxWidth()
                         .testTag(BrowserScreenTags.UrlField),
-                label = { Text("Address") },
+                label = { Text("type URL") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                 keyboardActions = KeyboardActions(onGo = { onUrlSubmit() }),
