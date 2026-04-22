@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
@@ -68,7 +69,7 @@ fun BrowserScreen(
             onEffectConsumed = onWebEffectConsumed,
             onEvent = onWebViewEvent,
             onBridgeCreated = onBridgeCreated,
-            modifier = Modifier.fillMaxSize().statusBarsPadding(),
+            modifier = Modifier.fillMaxSize().statusBarsPadding().imePadding(),
         )
 
         if (uiState.isChromeVisible) {
@@ -111,7 +112,8 @@ fun BrowserScreen(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .navigationBarsPadding(),
+                        .navigationBarsPadding()
+                        .imePadding(),
             )
         }
     }
