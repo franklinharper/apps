@@ -18,6 +18,10 @@ android {
         versionName = "1.0.0"
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true

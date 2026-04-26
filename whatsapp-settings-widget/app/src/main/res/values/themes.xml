@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.WhatsAppWidget" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/wa_green</item>
-        <item name="colorPrimaryVariant">@color/wa_dark_green</item>
-        <item name="colorOnPrimary">@color/wa_white</item>
+    <style name="Theme.WhatsAppWidget" parent="@android:style/Theme.Translucent.NoTitleBar">
     </style>
 
     <style name="Theme.WhatsAppWidget.Transparent">

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.franklinharper.whatsapp.settings.intent.SettingsIntentBuilder
 import com.franklinharper.whatsapp.settings.widget.StatusWidget
+import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.launch
 
 class WidgetTrampolineActivity : ComponentActivity() {
