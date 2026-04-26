@@ -10,15 +10,15 @@ class WhatsAppStatusRepositoryTest {
     }
 
     @Test
-    fun `fake returns Unrestricted status`() {
-        val repo = FakeRepository(WhatsAppStatus.Unrestricted)
-        assertEquals(WhatsAppStatus.Unrestricted, repo.getStatus())
+    fun `fake returns BackgroundUsageUnrestricted status`() {
+        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageUnrestricted)
+        assertEquals(WhatsAppStatus.BackgroundUsageUnrestricted, repo.getStatus())
     }
 
     @Test
-    fun `fake returns Optimized status`() {
-        val repo = FakeRepository(WhatsAppStatus.Optimized)
-        assertEquals(WhatsAppStatus.Optimized, repo.getStatus())
+    fun `fake returns BackgroundUsageOptimized status`() {
+        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageOptimized)
+        assertEquals(WhatsAppStatus.BackgroundUsageOptimized, repo.getStatus())
     }
 
     @Test

@@ -67,14 +67,6 @@ fun MainScreen(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    text = "Background Activity",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
                     text = label,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
@@ -101,19 +93,19 @@ private data class StatusDisplay(
 )
 
 private fun statusDisplay(status: WhatsAppStatus): StatusDisplay = when (status) {
-    WhatsAppStatus.Unrestricted -> StatusDisplay(
+    WhatsAppStatus.BackgroundUsageUnrestricted -> StatusDisplay(
         icon = Icons.Filled.CheckCircle,
         tint = Color(0xFF25D366),
-        label = "Unrestricted",
+        label = "Background usage: Unrestricted",
     )
-    WhatsAppStatus.Optimized -> StatusDisplay(
+    WhatsAppStatus.BackgroundUsageOptimized -> StatusDisplay(
         icon = Icons.Filled.Warning,
         tint = Color(0xFFF57C00),
-        label = "Optimized",
+        label = "Background usage: Optimized",
     )
     WhatsAppStatus.NotInstalled -> StatusDisplay(
         icon = Icons.Filled.PhoneDisabled,
         tint = Color(0xFF9E9E9E),
-        label = "Not installed",
+        label = "WhatsApp not installed",
     )
 }

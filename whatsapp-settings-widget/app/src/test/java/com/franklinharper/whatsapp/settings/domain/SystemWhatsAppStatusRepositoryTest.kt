@@ -22,22 +22,22 @@ class SystemWhatsAppStatusRepositoryTest {
     }
 
     @Test
-    fun `returns Unrestricted when ignoring battery optimizations`() {
+    fun `returns BackgroundUsageUnrestricted when ignoring battery optimizations`() {
         whenever(packageManager.getPackageInfo(any<String>(), any<Int>()))
             .thenReturn(mock())
         whenever(powerManager.isIgnoringBatteryOptimizations("com.whatsapp"))
             .thenReturn(true)
         val repo = SystemWhatsAppStatusRepository(packageManager, powerManager)
-        assertEquals(WhatsAppStatus.Unrestricted, repo.getStatus())
+        assertEquals(WhatsAppStatus.BackgroundUsageUnrestricted, repo.getStatus())
     }
 
     @Test
-    fun `returns Optimized when not ignoring battery optimizations`() {
+    fun `returns BackgroundUsageOptimized when not ignoring battery optimizations`() {
         whenever(packageManager.getPackageInfo(any<String>(), any<Int>()))
             .thenReturn(mock())
         whenever(powerManager.isIgnoringBatteryOptimizations("com.whatsapp"))
             .thenReturn(false)
         val repo = SystemWhatsAppStatusRepository(packageManager, powerManager)
-        assertEquals(WhatsAppStatus.Optimized, repo.getStatus())
+        assertEquals(WhatsAppStatus.BackgroundUsageOptimized, repo.getStatus())
     }
 }

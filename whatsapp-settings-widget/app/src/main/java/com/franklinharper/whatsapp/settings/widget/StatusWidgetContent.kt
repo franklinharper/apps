@@ -3,6 +3,7 @@ package com.franklinharper.whatsapp.settings.widget
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.glance.Button
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.action.actionStartActivity
@@ -21,9 +22,6 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.franklinharper.whatsapp.settings.WidgetTrampolineActivity
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
-import androidx.glance.Button
-import androidx.glance.layout.wrapContentSize
-import androidx.glance.unit.Dimension
 
 @Composable
 fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
@@ -47,21 +45,15 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
                     ),
                 )
 
-                Spacer(modifier = GlanceModifier.height(4))
-
-                Text(
-                    text = "Background Activity",
-                    style = TextStyle(
-                        color = ColorProvider(Color(0xFFCCCCCC)),
-                    ),
-                )
-
                 Spacer(modifier = GlanceModifier.height(8))
 
                 val (statusText, statusColor) = when (status) {
-                    WhatsAppStatus.Unrestricted -> "Unrestricted" to Color(0xFF25D366)
-                    WhatsAppStatus.Optimized -> "Optimized" to Color(0xFFFFA726)
-                    WhatsAppStatus.NotInstalled -> "Not installed" to Color(0xFF9E9E9E)
+                    WhatsAppStatus.BackgroundUsageUnrestricted ->
+                        "Background usage: Unrestricted" to Color(0xFF25D366)
+                    WhatsAppStatus.BackgroundUsageOptimized ->
+                        "Background usage: Optimized" to Color(0xFFFFA726)
+                    WhatsAppStatus.NotInstalled ->
+                        "Not installed" to Color(0xFF9E9E9E)
                 }
 
                 Text(

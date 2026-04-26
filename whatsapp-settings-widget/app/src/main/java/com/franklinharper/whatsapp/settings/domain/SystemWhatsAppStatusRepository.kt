@@ -16,9 +16,9 @@ class SystemWhatsAppStatusRepository(
             return WhatsAppStatus.NotInstalled
         }
         return if (powerManager.isIgnoringBatteryOptimizations("com.whatsapp")) {
-            WhatsAppStatus.Unrestricted
+            WhatsAppStatus.BackgroundUsageUnrestricted
         } else {
-            WhatsAppStatus.Optimized
+            WhatsAppStatus.BackgroundUsageOptimized
         }
     }
 }
