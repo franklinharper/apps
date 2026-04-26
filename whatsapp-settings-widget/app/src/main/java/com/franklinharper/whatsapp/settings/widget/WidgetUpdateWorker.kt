@@ -3,6 +3,8 @@ package com.franklinharper.whatsapp.settings.widget
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.franklinharper.whatsapp.settings.AppDependencies
+import com.franklinharper.whatsapp.settings.domain.DetectionSource
 
 class WidgetUpdateWorker(
     appContext: Context,
@@ -10,7 +12,9 @@ class WidgetUpdateWorker(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
-        StatusWidgetUpdater.refresh(applicationContext)
+        val status = AppDependencies.statusMonitor(applicationContext)
+            .detectAndRecord(DetectionSource.PeriodicWorker)
+        StatusWidgetUpdater.refresh(applicationContext, status)
         return Result.success()
     }
 

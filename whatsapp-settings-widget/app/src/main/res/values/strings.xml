@@ -6,6 +6,8 @@
     <string name="status_background_usage_restricted_or_optimized">Background usage: Restricted or optimized</string>
     <string name="status_not_installed">WhatsApp not installed</string>
     <string name="open_settings_button">Open WhatsApp Battery Settings</string>
+    <string name="sessions_title">Detected unrestricted sessions</string>
+    <string name="sessions_empty">No unrestricted sessions detected yet.</string>
     <string name="widget_title">WA</string>
     <string name="widget_description">Shows WhatsApp background activity status</string>
 </resources>

@@ -10,7 +10,6 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.franklinharper.whatsapp.settings.domain.WhatsAppStatusRepositoryFactory
 import com.franklinharper.whatsapp.settings.intent.SettingsIntentBuilder
 import com.franklinharper.whatsapp.settings.ui.MainScreen
 import com.franklinharper.whatsapp.settings.widget.StatusWidgetUpdater
@@ -22,7 +21,11 @@ class MainActivity : ComponentActivity() {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainViewModel(WhatsAppStatusRepositoryFactory.create(this@MainActivity)) as T
+                return MainViewModel(
+                    monitor = AppDependencies.statusMonitor(this@MainActivity),
+                    trackingRepository = AppDependencies.statusTrackingRepository(this@MainActivity),
+                    sessionFormatter = AppDependencies.unrestrictedSessionFormatter(),
+                ) as T
             }
         }
     }

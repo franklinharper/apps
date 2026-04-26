@@ -10,7 +10,8 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.currentState
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
-import com.franklinharper.whatsapp.settings.domain.WhatsAppStatusRepositoryFactory
+import com.franklinharper.whatsapp.settings.AppDependencies
+import com.franklinharper.whatsapp.settings.domain.DetectionSource
 import com.franklinharper.whatsapp.settings.widget.WidgetStatusState.toStateValue
 import com.franklinharper.whatsapp.settings.widget.WidgetStatusState.toWhatsAppStatusOrNull
 
@@ -24,7 +25,7 @@ class StatusWidget : GlanceAppWidget() {
         provideContent {
             val status = currentState(WidgetStatusState.StatusKey)
                 ?.toWhatsAppStatusOrNull()
-                ?: WhatsAppStatusRepositoryFactory.create(context).getStatus()
+                ?: AppDependencies.statusMonitor(context).detectAndRecord(DetectionSource.WidgetInitialRender)
             StatusWidgetContent(status = status, context = context)
         }
     }
@@ -32,7 +33,7 @@ class StatusWidget : GlanceAppWidget() {
     private suspend fun ensureStatusStateExists(context: Context, id: GlanceId) {
         val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
         if (state[WidgetStatusState.StatusKey] == null) {
-            val status = WhatsAppStatusRepositoryFactory.create(context).getStatus()
+            val status = AppDependencies.statusMonitor(context).detectAndRecord(DetectionSource.WidgetInitialRender)
             updateAppWidgetState(context, id) { preferences ->
                 preferences[WidgetStatusState.StatusKey] = status.toStateValue()
             }
