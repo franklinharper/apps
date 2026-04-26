@@ -9,7 +9,6 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
 
 @Composable
@@ -27,7 +26,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
         ) {
             Text(
                 text = "WhatsApp: $statusText",
-                style = TextStyle(color = ColorProvider(GlanceTheme.colors.onSurface)),
+                style = TextStyle(color = GlanceTheme.colors.onSurface),
             )
         }
     }
