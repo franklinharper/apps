@@ -15,10 +15,13 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
 import com.franklinharper.whatsapp.settings.domain.toDisplay
+import com.franklinharper.whatsapp.settings.ui.StatusDisabledColor
+import com.franklinharper.whatsapp.settings.ui.StatusEnabledColor
 
 @Composable
 fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
     val display = status.toDisplay()
+    val backgroundColor = if (display.enabled) StatusEnabledColor else StatusDisabledColor
 
     GlanceTheme {
         Column(
@@ -26,7 +29,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.surface)
+                .background(backgroundColor)
                 .padding(12.dp),
         ) {
             Text(
