@@ -16,8 +16,8 @@ class StatusWidgetReceiver : GlanceAppWidgetReceiver() {
         super.onEnabled(context)
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             WidgetUpdateWorker.WORK_TAG,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<WidgetUpdateWorker>(1, TimeUnit.HOURS).build(),
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<WidgetUpdateWorker>(15, TimeUnit.MINUTES).build(),
         )
     }
 

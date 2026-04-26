@@ -10,9 +10,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.glance.appwidget.updateAll
 import com.franklinharper.whatsapp.settings.domain.SystemWhatsAppStatusRepository
 import com.franklinharper.whatsapp.settings.intent.SettingsIntentBuilder
 import com.franklinharper.whatsapp.settings.ui.MainScreen
+import com.franklinharper.whatsapp.settings.widget.StatusWidget
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -46,5 +50,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refresh()
+        lifecycleScope.launch {
+            StatusWidget().updateAll(this@MainActivity)
+        }
     }
 }
