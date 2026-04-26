@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WhatsAppWidget" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/wa_green</item>
+        <item name="colorPrimaryVariant">@color/wa_dark_green</item>
+        <item name="colorOnPrimary">@color/wa_white</item>
+    </style>
+
+    <style name="Theme.WhatsAppWidget.Transparent">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+    </style>
+</resources>

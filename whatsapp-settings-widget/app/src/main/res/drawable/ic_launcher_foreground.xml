@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  8-tooth gear centered at (54,54) in a 108x108 viewport.
+  Safe zone: 72dp circle (36dp radius). Outer tooth tip: 30dp, valley: 23dp, bore: 12dp.
+  fillType="evenOdd" punches out the center bore hole.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="
+          M54,24
+          L57.5,24 L59,30.5
+          C61.8,31.3 64.4,32.5 66.8,34
+          L72.8,31 L76.2,34.4
+          L73.1,40.4
+          C74.6,42.8 75.8,45.4 76.6,48.2
+          L83,49.7 L83,53.3
+          L76.6,54.8
+          C75.8,57.6 74.6,60.2 73.1,62.6
+          L76.2,68.6 L72.8,72
+          L66.8,68.9
+          C64.4,70.4 61.8,71.6 59,72.4
+          L57.5,78.9 L50.5,78.9
+          L49,72.4
+          C46.2,71.6 43.6,70.4 41.2,68.9
+          L35.2,72 L31.8,68.6
+          L34.9,62.6
+          C33.4,60.2 32.2,57.6 31.4,54.8
+          L25,53.3 L25,49.7
+          L31.4,48.2
+          C32.2,45.4 33.4,42.8 34.9,40.4
+          L31.8,34.4 L35.2,31
+          L41.2,34
+          C43.6,32.5 46.2,31.3 49,30.5
+          L50.5,24 Z
+          M54,42
+          A12,12 0 0 0 54,66
+          A12,12 0 0 0 54,42 Z
+        " />
+</vector>
