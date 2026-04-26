@@ -2,7 +2,6 @@ package com.franklinharper.whatsapp.settings.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.background
@@ -16,11 +15,14 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
 import com.franklinharper.whatsapp.settings.domain.toDisplay
+import com.franklinharper.whatsapp.settings.ui.StatusDisabledColor
+import com.franklinharper.whatsapp.settings.ui.StatusEnabledColor
+import com.franklinharper.whatsapp.settings.ui.StatusTextColor
 
 @Composable
 fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
     val display = status.toDisplay()
-    val bgColor = if (display.enabled) Color.Red else Color.Green
+    val bgColor = if (display.enabled) StatusEnabledColor else StatusDisabledColor
 
     GlanceTheme {
         Column(
@@ -34,7 +36,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
             Text(
                 text = display.label,
                 style = TextStyle(
-                    color = ColorProvider(Color.White),
+                    color = ColorProvider(StatusTextColor),
                     fontWeight = FontWeight.Bold,
                 ),
             )

@@ -17,10 +17,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.franklinharper.whatsapp.settings.MainUiState
+import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
 import com.franklinharper.whatsapp.settings.domain.toDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,13 +49,13 @@ fun MainScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 val display = uiState.status.toDisplay()
-                val bgColor = if (display.enabled) Color.Red else Color.Green
+                val bgColor = if (display.enabled) StatusEnabledColor else StatusDisabledColor
 
                 Text(
                     text = display.label,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = StatusTextColor,
                     modifier = Modifier
                         .background(bgColor)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -65,7 +65,7 @@ fun MainScreen(
 
                 Button(
                     onClick = onOpenSettingsClick,
-                    enabled = uiState.status != com.franklinharper.whatsapp.settings.domain.WhatsAppStatus.NotInstalled,
+                    enabled = uiState.status != WhatsAppStatus.NotInstalled,
                 ) {
                     Text("Open WhatsApp Battery Settings")
                 }
