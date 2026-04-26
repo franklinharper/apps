@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WA Settings</string>
+    <string name="status_unrestricted">Unrestricted</string>
+    <string name="status_optimized">Optimized</string>
+    <string name="status_not_installed">Not installed</string>
+    <string name="open_settings_button">Open WhatsApp Battery Settings</string>
+    <string name="widget_description">Shows WhatsApp background activity status</string>
+</resources>
