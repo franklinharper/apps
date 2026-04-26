@@ -28,7 +28,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(bgColor)
+                .background(ColorProvider(bgColor))
                 .padding(12),
         ) {
             Text(
