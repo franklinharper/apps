@@ -1,6 +1,7 @@
 package com.franklinharper.whatsapp.settings.widget
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.glance.Button
@@ -23,8 +24,11 @@ import androidx.glance.unit.ColorProvider
 import com.franklinharper.whatsapp.settings.WidgetTrampolineActivity
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
 
+private const val TAG = "StatusWidget"
+
 @Composable
 fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
+    Log.d(TAG, "StatusWidgetContent status=$status")
     GlanceTheme {
         Box(
             modifier = GlanceModifier
@@ -67,6 +71,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
                 Spacer(modifier = GlanceModifier.height(8))
 
                 if (status != WhatsAppStatus.NotInstalled) {
+                    Log.d(TAG, "Adding Open Settings button")
                     Button(
                         text = "Open Settings",
                         onClick = actionStartActivity<WidgetTrampolineActivity>(),
