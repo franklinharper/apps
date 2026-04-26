@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.franklinharper.whatsapp.settings.MainUiState
-import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
+import com.franklinharper.whatsapp.settings.domain.toDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,54 +48,28 @@ fun MainScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                when (uiState.status) {
-                    WhatsAppStatus.BackgroundUsageUnrestricted -> {
-                        StatusLabel(
-                            text = "Background usage: Enabled",
-                            backgroundColor = Color.Red,
-                        )
-                    }
-                    WhatsAppStatus.BackgroundUsageUnknown -> {
-                        StatusLabel(
-                            text = "Background usage: Disabled",
-                            backgroundColor = Color.Green,
-                        )
-                    }
-                    WhatsAppStatus.NotInstalled -> {
-                        Text(
-                            text = "WhatsApp not installed",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Gray,
-                        )
-                    }
-                }
+                val display = uiState.status.toDisplay()
+                val bgColor = if (display.enabled) Color.Red else Color.Green
+
+                Text(
+                    text = display.label,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .background(bgColor)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
 
                 Spacer(Modifier.height(32.dp))
 
                 Button(
                     onClick = onOpenSettingsClick,
-                    enabled = uiState.status != WhatsAppStatus.NotInstalled,
+                    enabled = uiState.status != com.franklinharper.whatsapp.settings.domain.WhatsAppStatus.NotInstalled,
                 ) {
                     Text("Open WhatsApp Battery Settings")
                 }
             }
         }
     }
-}
-
-@Composable
-private fun StatusLabel(
-    text: String,
-    backgroundColor: Color,
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-        modifier = Modifier
-            .background(backgroundColor)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    )
 }

@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
-import androidx.glance.action.actionStartActivity
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
@@ -15,19 +14,13 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.franklinharper.whatsapp.settings.WidgetTrampolineActivity
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
+import com.franklinharper.whatsapp.settings.domain.toDisplay
 
 @Composable
 fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
-    val (statusText, bgColor) = when (status) {
-        WhatsAppStatus.BackgroundUsageUnrestricted ->
-            "Background usage: Enabled" to Color.Red
-        WhatsAppStatus.BackgroundUsageUnknown ->
-            "Background usage: Disabled" to Color.Green
-        WhatsAppStatus.NotInstalled ->
-            "WhatsApp not installed" to Color.Gray
-    }
+    val display = status.toDisplay()
+    val bgColor = if (display.enabled) Color.Red else Color.Green
 
     GlanceTheme {
         Column(
@@ -39,7 +32,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
                 .padding(12),
         ) {
             Text(
-                text = statusText,
+                text = display.label,
                 style = TextStyle(
                     color = ColorProvider(Color.White),
                     fontWeight = FontWeight.Bold,
