@@ -23,12 +23,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".WidgetTrampolineActivity"
-            android:exported="false"
-            android:theme="@style/Theme.WhatsAppWidget.Transparent"
-            android:taskAffinity=""
-            android:excludeFromRecents="true" />
 
         <receiver
             android:name=".widget.StatusWidgetReceiver"

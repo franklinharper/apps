@@ -1,18 +1,17 @@
 package com.franklinharper.whatsapp.settings
 
 import android.os.Bundle
-import android.os.PowerManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.glance.appwidget.updateAll
-import com.franklinharper.whatsapp.settings.domain.SystemWhatsAppStatusRepository
+import com.franklinharper.whatsapp.settings.domain.WhatsAppStatusRepositoryFactory
 import com.franklinharper.whatsapp.settings.intent.SettingsIntentBuilder
 import com.franklinharper.whatsapp.settings.ui.MainScreen
 import com.franklinharper.whatsapp.settings.widget.StatusWidget
@@ -24,11 +23,7 @@ class MainActivity : ComponentActivity() {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val repo = SystemWhatsAppStatusRepository(
-                    packageManager = packageManager,
-                    powerManager = getSystemService(PowerManager::class.java),
-                )
-                return MainViewModel(repo) as T
+                return MainViewModel(WhatsAppStatusRepositoryFactory.create(this@MainActivity)) as T
             }
         }
     }
@@ -41,7 +36,7 @@ class MainActivity : ComponentActivity() {
             MainScreen(
                 uiState = uiState,
                 onOpenSettingsClick = {
-                    startActivity(SettingsIntentBuilder().build(this))
+                    startActivity(SettingsIntentBuilder().build())
                 },
             )
         }

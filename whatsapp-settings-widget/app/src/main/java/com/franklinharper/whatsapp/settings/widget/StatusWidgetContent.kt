@@ -23,7 +23,7 @@ import androidx.glance.unit.ColorProvider
 import com.franklinharper.whatsapp.settings.MainActivity
 import com.franklinharper.whatsapp.settings.R
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
-import com.franklinharper.whatsapp.settings.domain.toDisplay
+import com.franklinharper.whatsapp.settings.presentation.toDisplay
 import com.franklinharper.whatsapp.settings.ui.StatusDisabledColor
 import com.franklinharper.whatsapp.settings.ui.StatusEnabledColor
 import com.franklinharper.whatsapp.settings.ui.StatusNotInstalledColor
@@ -47,7 +47,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
             .padding(6.dp),
     ) {
         Text(
-            text = "WA",
+            text = context.getString(R.string.widget_title),
             style = TextStyle(
                 color = ColorProvider(StatusTextColor),
                 fontWeight = FontWeight.Bold,
@@ -58,7 +58,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
 
         Image(
             provider = ImageProvider(R.drawable.ic_battery_widget),
-            contentDescription = display.label,
+            contentDescription = context.getString(display.labelRes),
             modifier = GlanceModifier.size(38.dp),
         )
     }

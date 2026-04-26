@@ -17,11 +17,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.franklinharper.whatsapp.settings.MainUiState
+import com.franklinharper.whatsapp.settings.R
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
-import com.franklinharper.whatsapp.settings.domain.toDisplay
+import com.franklinharper.whatsapp.settings.presentation.toDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +35,7 @@ fun MainScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("WhatsApp Background Activity") },
+                    title = { Text(stringResource(R.string.screen_title)) },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -52,7 +54,7 @@ fun MainScreen(
                 val bgColor = if (display.enabled) StatusEnabledColor else StatusDisabledColor
 
                 Text(
-                    text = display.label,
+                    text = stringResource(display.labelRes),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = StatusTextColor,
@@ -67,7 +69,7 @@ fun MainScreen(
                     onClick = onOpenSettingsClick,
                     enabled = uiState.status != WhatsAppStatus.NotInstalled,
                 ) {
-                    Text("Open WhatsApp Battery Settings")
+                    Text(stringResource(R.string.open_settings_button))
                 }
             }
         }

@@ -24,22 +24,22 @@ class MainScreenTest {
     fun showsUnrestrictedStatus() {
         composeRule.setContent {
             MainScreen(
-                uiState = MainUiState(WhatsAppStatus.Unrestricted),
+                uiState = MainUiState(WhatsAppStatus.BackgroundUsageUnrestricted),
                 onOpenSettingsClick = {},
             )
         }
-        composeRule.onNodeWithText("Unrestricted").assertIsDisplayed()
+        composeRule.onNodeWithText("Background usage: Unrestricted").assertIsDisplayed()
     }
 
     @Test
-    fun showsOptimizedStatus() {
+    fun showsRestrictedOrOptimizedStatus() {
         composeRule.setContent {
             MainScreen(
-                uiState = MainUiState(WhatsAppStatus.Optimized),
+                uiState = MainUiState(WhatsAppStatus.BackgroundUsageRestrictedOrOptimized),
                 onOpenSettingsClick = {},
             )
         }
-        composeRule.onNodeWithText("Optimized").assertIsDisplayed()
+        composeRule.onNodeWithText("Background usage: Restricted or optimized").assertIsDisplayed()
     }
 
     @Test
@@ -50,7 +50,7 @@ class MainScreenTest {
                 onOpenSettingsClick = {},
             )
         }
-        composeRule.onNodeWithText("Not installed").assertIsDisplayed()
+        composeRule.onNodeWithText("WhatsApp not installed").assertIsDisplayed()
         composeRule.onNodeWithText("Open WhatsApp Battery Settings").assertIsNotEnabled()
     }
 
@@ -59,7 +59,7 @@ class MainScreenTest {
         var clicked = false
         composeRule.setContent {
             MainScreen(
-                uiState = MainUiState(WhatsAppStatus.Unrestricted),
+                uiState = MainUiState(WhatsAppStatus.BackgroundUsageUnrestricted),
                 onOpenSettingsClick = { clicked = true },
             )
         }
@@ -71,7 +71,7 @@ class MainScreenTest {
     fun buttonEnabledWhenUnrestricted() {
         composeRule.setContent {
             MainScreen(
-                uiState = MainUiState(WhatsAppStatus.Unrestricted),
+                uiState = MainUiState(WhatsAppStatus.BackgroundUsageUnrestricted),
                 onOpenSettingsClick = {},
             )
         }

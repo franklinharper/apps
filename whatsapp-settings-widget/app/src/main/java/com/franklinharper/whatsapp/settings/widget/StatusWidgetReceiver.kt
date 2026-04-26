@@ -15,7 +15,7 @@ class StatusWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            WidgetUpdateWorker.WORK_TAG,
+            WidgetUpdateWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.UPDATE,
             PeriodicWorkRequestBuilder<WidgetUpdateWorker>(15, TimeUnit.MINUTES).build(),
         )
@@ -23,6 +23,6 @@ class StatusWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        WorkManager.getInstance(context).cancelUniqueWork(WidgetUpdateWorker.WORK_TAG)
+        WorkManager.getInstance(context).cancelUniqueWork(WidgetUpdateWorker.WORK_NAME)
     }
 }

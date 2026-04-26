@@ -11,14 +11,14 @@ class SystemWhatsAppStatusRepository(
     override fun getStatus(): WhatsAppStatus {
         try {
             @Suppress("DEPRECATION")
-            packageManager.getPackageInfo("com.whatsapp", 0)
+            packageManager.getPackageInfo(WhatsAppPackage.REGULAR, 0)
         } catch (e: PackageManager.NameNotFoundException) {
             return WhatsAppStatus.NotInstalled
         }
-        return if (powerManager.isIgnoringBatteryOptimizations("com.whatsapp")) {
+        return if (powerManager.isIgnoringBatteryOptimizations(WhatsAppPackage.REGULAR)) {
             WhatsAppStatus.BackgroundUsageUnrestricted
         } else {
-            WhatsAppStatus.BackgroundUsageUnknown
+            WhatsAppStatus.BackgroundUsageRestrictedOrOptimized
         }
     }
 }

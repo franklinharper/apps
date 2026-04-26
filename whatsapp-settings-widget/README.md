@@ -6,12 +6,12 @@ The widget is designed as a 1x1 launcher tile with a `WA` label and vertical bat
 
 | Unrestricted | Restricted |
 | --- | --- |
-| ![Red widget screenshot showing unrestricted background usage](docs/images/widget-red.svg) | ![Green widget screenshot showing restricted background usage](docs/images/widget-green.svg) |
+| ![Red widget illustration showing unrestricted background usage](docs/images/widget-red.svg) | ![Green widget illustration showing restricted or optimized background usage](docs/images/widget-green.svg) |
 
 ## What the colors mean
 
 - **Red**: WhatsApp is **unrestricted** / ignoring battery optimizations. This is the battery-drain risk state.
-- **Green**: WhatsApp is **restricted** in the sense that it is **not unrestricted**. This includes Android's optimized/default battery mode.
+- **Green**: WhatsApp is **restricted or optimized** in the sense that it is **not unrestricted**. This includes Android's optimized/default battery mode.
 - **Gray**: WhatsApp is not installed.
 
 ## Important Android API limitation
@@ -29,7 +29,7 @@ That API can reliably detect whether WhatsApp is **unrestricted**. It cannot dis
 - Allow background usage enabled + optimized
 - Allow background usage disabled
 
-For that reason, the green state means **not unrestricted**, not necessarily that Android's exact Allow background usage switch is off.
+For that reason, the green state means **restricted or optimized**, not necessarily that Android's exact Allow background usage switch is off.
 
 ## Behavior
 
@@ -41,7 +41,7 @@ For that reason, the green state means **not unrestricted**, not necessarily tha
 ## Build and test
 
 ```bash
-./gradlew test assembleDebug
+./gradlew test assembleDebug assembleDebugAndroidTest
 ```
 
 ## Package target

@@ -16,6 +16,6 @@ class WidgetUpdateWorker(
     }
 
     companion object {
-        const val WORK_TAG = "widget_hourly_update"
+        const val WORK_NAME = "widget_periodic_update"
     }
 }
