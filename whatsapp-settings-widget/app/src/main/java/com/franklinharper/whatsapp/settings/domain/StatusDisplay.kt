@@ -14,7 +14,7 @@ fun WhatsAppStatus.toDisplay(): StatusDisplay = when (this) {
         enabled = true,
     )
     WhatsAppStatus.BackgroundUsageUnknown -> StatusDisplay(
-        label = "Background usage: Not unrestricted",
+        label = "Background usage: Restricted",
         enabled = false,
     )
     WhatsAppStatus.NotInstalled -> StatusDisplay(

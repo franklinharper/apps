@@ -2,6 +2,7 @@ package com.franklinharper.whatsapp.settings.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.layout.Alignment
@@ -24,7 +25,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = GlanceModifier
                 .fillMaxSize()
-                .padding(12),
+                .padding(12.dp),
         ) {
             Text(
                 text = display.label,
