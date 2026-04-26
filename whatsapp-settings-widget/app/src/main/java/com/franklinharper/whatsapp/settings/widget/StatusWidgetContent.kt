@@ -51,7 +51,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
                     WhatsAppStatus.BackgroundUsageUnrestricted ->
                         "Background usage: Unrestricted" to Color(0xFF25D366)
                     WhatsAppStatus.BackgroundUsageUnknown ->
-                        "Background usage: Unknown" to Color(0xFFFFA726)
+                        "Background usage: Optimized or Off" to Color(0xFFFFA726)
                     WhatsAppStatus.NotInstalled ->
                         "Not installed" to Color(0xFF9E9E9E)
                 }
