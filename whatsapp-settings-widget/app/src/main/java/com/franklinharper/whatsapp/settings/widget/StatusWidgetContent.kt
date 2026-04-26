@@ -14,6 +14,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import androidx.glance.unit.Dp
+import androidx.glance.unit.dp
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
 import com.franklinharper.whatsapp.settings.domain.toDisplay
 
@@ -28,7 +29,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(GlanceTheme.colors.surface)
-                .padding(Dp(12f)),
+                .padding(12.dp),
         ) {
             Text(
                 text = display.label,
