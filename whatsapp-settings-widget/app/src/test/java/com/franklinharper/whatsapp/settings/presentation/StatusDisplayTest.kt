@@ -14,7 +14,7 @@ class StatusDisplayTest {
         val display = WhatsAppStatus.BackgroundUsageUnrestricted.toDisplay()
 
         assertEquals(R.string.status_background_usage_unrestricted, display.labelRes)
-        assertTrue(display.enabled)
+        assertTrue(display.unrestricted)
     }
 
     @Test
@@ -22,7 +22,7 @@ class StatusDisplayTest {
         val display = WhatsAppStatus.BackgroundUsageRestrictedOrOptimized.toDisplay()
 
         assertEquals(R.string.status_background_usage_restricted_or_optimized, display.labelRes)
-        assertFalse(display.enabled)
+        assertFalse(display.unrestricted)
     }
 
     @Test
@@ -30,6 +30,6 @@ class StatusDisplayTest {
         val display = WhatsAppStatus.NotInstalled.toDisplay()
 
         assertEquals(R.string.status_not_installed, display.labelRes)
-        assertFalse(display.enabled)
+        assertFalse(display.unrestricted)
     }
 }

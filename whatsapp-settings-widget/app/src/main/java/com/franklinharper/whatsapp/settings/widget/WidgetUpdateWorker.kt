@@ -1,7 +1,6 @@
 package com.franklinharper.whatsapp.settings.widget
 
 import android.content.Context
-import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 
@@ -11,7 +10,7 @@ class WidgetUpdateWorker(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
-        StatusWidget().updateAll(applicationContext)
+        StatusWidgetUpdater.refresh(applicationContext)
         return Result.success()
     }
 

@@ -51,7 +51,7 @@ fun MainScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 val display = uiState.status.toDisplay()
-                val bgColor = if (display.enabled) StatusEnabledColor else StatusDisabledColor
+                val bgColor = if (display.unrestricted) StatusEnabledColor else StatusDisabledColor
 
                 Text(
                     text = stringResource(display.labelRes),

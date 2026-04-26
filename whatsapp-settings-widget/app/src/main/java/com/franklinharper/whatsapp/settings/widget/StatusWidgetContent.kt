@@ -34,7 +34,7 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
     val display = status.toDisplay()
     val backgroundColor = when (status) {
         WhatsAppStatus.NotInstalled -> StatusNotInstalledColor
-        else -> if (display.enabled) StatusEnabledColor else StatusDisabledColor
+        else -> if (display.unrestricted) StatusEnabledColor else StatusDisabledColor
     }
 
     Column(

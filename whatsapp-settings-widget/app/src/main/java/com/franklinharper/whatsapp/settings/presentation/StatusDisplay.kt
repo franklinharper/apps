@@ -6,20 +6,20 @@ import com.franklinharper.whatsapp.settings.domain.WhatsAppStatus
 
 data class StatusDisplay(
     @StringRes val labelRes: Int,
-    val enabled: Boolean,
+    val unrestricted: Boolean,
 )
 
 fun WhatsAppStatus.toDisplay(): StatusDisplay = when (this) {
     WhatsAppStatus.BackgroundUsageUnrestricted -> StatusDisplay(
         labelRes = R.string.status_background_usage_unrestricted,
-        enabled = true,
+        unrestricted = true,
     )
     WhatsAppStatus.BackgroundUsageRestrictedOrOptimized -> StatusDisplay(
         labelRes = R.string.status_background_usage_restricted_or_optimized,
-        enabled = false,
+        unrestricted = false,
     )
     WhatsAppStatus.NotInstalled -> StatusDisplay(
         labelRes = R.string.status_not_installed,
-        enabled = false,
+        unrestricted = false,
     )
 }

@@ -7,14 +7,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.franklinharper.whatsapp.settings.domain.WhatsAppStatusRepositoryFactory
 import com.franklinharper.whatsapp.settings.intent.SettingsIntentBuilder
 import com.franklinharper.whatsapp.settings.ui.MainScreen
-import com.franklinharper.whatsapp.settings.widget.StatusWidget
+import com.franklinharper.whatsapp.settings.widget.StatusWidgetUpdater
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -46,7 +45,10 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         viewModel.refresh()
         lifecycleScope.launch {
-            StatusWidget().updateAll(this@MainActivity)
+            StatusWidgetUpdater.refresh(
+                context = this@MainActivity,
+                status = viewModel.uiState.value.status,
+            )
         }
     }
 }
