@@ -16,9 +16,9 @@ class WhatsAppStatusRepositoryTest {
     }
 
     @Test
-    fun `fake returns BackgroundUsageOptimized status`() {
-        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageOptimized)
-        assertEquals(WhatsAppStatus.BackgroundUsageOptimized, repo.getStatus())
+    fun `fake returns BackgroundUsageUnknown status`() {
+        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageUnknown)
+        assertEquals(WhatsAppStatus.BackgroundUsageUnknown, repo.getStatus())
     }
 
     @Test

@@ -20,10 +20,10 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `initial state reflects BackgroundUsageOptimized from repository`() {
-        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageOptimized)
+    fun `initial state reflects BackgroundUsageUnknown from repository`() {
+        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageUnknown)
         val vm = MainViewModel(repo)
-        assertEquals(MainUiState(WhatsAppStatus.BackgroundUsageOptimized), vm.uiState.value)
+        assertEquals(MainUiState(WhatsAppStatus.BackgroundUsageUnknown), vm.uiState.value)
     }
 
     @Test
@@ -35,7 +35,7 @@ class MainViewModelTest {
 
     @Test
     fun `refresh re-queries repository and updates uiState`() {
-        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageOptimized)
+        val repo = FakeRepository(WhatsAppStatus.BackgroundUsageUnknown)
         val vm = MainViewModel(repo)
         repo.setStatus(WhatsAppStatus.BackgroundUsageUnrestricted)
         vm.refresh()

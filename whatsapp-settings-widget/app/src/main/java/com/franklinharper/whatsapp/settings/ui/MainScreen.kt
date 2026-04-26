@@ -98,10 +98,10 @@ private fun statusDisplay(status: WhatsAppStatus): StatusDisplay = when (status)
         tint = Color(0xFF25D366),
         label = "Background usage: Unrestricted",
     )
-    WhatsAppStatus.BackgroundUsageOptimized -> StatusDisplay(
+    WhatsAppStatus.BackgroundUsageUnknown -> StatusDisplay(
         icon = Icons.Filled.Warning,
         tint = Color(0xFFF57C00),
-        label = "Background usage: Optimized",
+        label = "Background usage: Unknown",
     )
     WhatsAppStatus.NotInstalled -> StatusDisplay(
         icon = Icons.Filled.PhoneDisabled,

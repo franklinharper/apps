@@ -50,8 +50,8 @@ fun StatusWidgetContent(status: WhatsAppStatus, context: Context) {
                 val (statusText, statusColor) = when (status) {
                     WhatsAppStatus.BackgroundUsageUnrestricted ->
                         "Background usage: Unrestricted" to Color(0xFF25D366)
-                    WhatsAppStatus.BackgroundUsageOptimized ->
-                        "Background usage: Optimized" to Color(0xFFFFA726)
+                    WhatsAppStatus.BackgroundUsageUnknown ->
+                        "Background usage: Unknown" to Color(0xFFFFA726)
                     WhatsAppStatus.NotInstalled ->
                         "Not installed" to Color(0xFF9E9E9E)
                 }
