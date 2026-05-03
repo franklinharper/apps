@@ -21,6 +21,33 @@ class DicewarsMapGenerationTest {
     }
 
     @Test
+    fun generatedMapContainsOpenSeaCells() {
+        val map = DicewarsGame().makeMap(SequenceRandomSource())
+
+        assertTrue(map.cells.any { it == 0 }, "generated maps should contain unoccupied sea/open cells")
+    }
+
+    @Test
+    fun generatedMapGivesEveryPlayerTheSameInitialArmyTotal() {
+        for (playerCount in 2..8) {
+            val game = DicewarsGame()
+            game.pmax = playerCount
+            game.makeMap(SequenceRandomSource())
+
+            val armyTotals = (0 until playerCount).map { player ->
+                game.areas
+                    .filter { it.size > 0 && it.owner == player }
+                    .sumOf { it.dice }
+            }
+
+            assertTrue(
+                armyTotals.distinct().size == 1,
+                "playerCount=$playerCount should have equal initial armies, got $armyTotals",
+            )
+        }
+    }
+
+    @Test
     fun adjacencyIsSymmetric() {
         val game = DicewarsGame()
         val map = game.makeMap(SequenceRandomSource())

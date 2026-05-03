@@ -390,30 +390,44 @@ class DicewarsGame {
     }
 
     private fun placeDice(random: RandomSource) {
-        var activeAreaCount = 0
-        for (i in 1 until AREA_MAX) {
-            if (areas[i].size > 0) {
-                activeAreaCount++
-                areas[i].dice = 1
-            }
+        val activeAreaIds = mutableListOf<Int>()
+        val playerAreaCounts = IntArray(pmax)
+        for (areaNumber in 1 until AREA_MAX) {
+            val area = areas[areaNumber]
+            if (area.size == 0) continue
+            activeAreaIds.add(areaNumber)
+            area.dice = 1
+            if (area.owner in 0 until pmax) playerAreaCounts[area.owner]++
         }
 
-        val diceToPlace = activeAreaCount * (averageDicePlacement - 1)
-        for (i in 0 until diceToPlace) {
-            val player = i % pmax
-            var count = 0
-            for (areaNumber in 1 until AREA_MAX) {
-                val area = areas[areaNumber]
-                if (area.size == 0) continue
-                if (area.owner != player) continue
-                if (area.dice >= MAX_DICE) continue
-                areaList[count] = areaNumber
-                count++
+        val desiredTotalArmies = activeAreaIds.size * averageDicePlacement
+        val targetArmiesPerPlayer = maxOf(
+            playerAreaCounts.maxOrNull() ?: 0,
+            (desiredTotalArmies + pmax - 1) / pmax,
+        )
+
+        for (player in 0 until pmax) {
+            while (playerDiceCount(player) < targetArmiesPerPlayer) {
+                val playerAreas = activeAreaIds.filter { areaNumber ->
+                    val area = areas[areaNumber]
+                    area.owner == player && area.dice < MAX_DICE
+                }
+                if (playerAreas.isEmpty()) break
+                val areaNumber = playerAreas[random.nextInt(playerAreas.size)]
+                areas[areaNumber].dice++
             }
-            if (count == 0) continue
-            val areaNumber = areaList[random.nextInt(count)]
-            areas[areaNumber].dice++
         }
+    }
+
+    private fun playerDiceCount(player: Int): Int {
+        var count = 0
+        for (areaNumber in 1 until AREA_MAX) {
+            val area = areas[areaNumber]
+            if (area.size == 0) continue
+            if (area.owner != player) continue
+            count += area.dice
+        }
+        return count
     }
 
     private fun ensureSymmetricAdjacency() {

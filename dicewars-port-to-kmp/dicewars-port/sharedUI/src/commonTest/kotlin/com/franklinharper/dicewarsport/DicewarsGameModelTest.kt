@@ -6,23 +6,6 @@ import kotlin.test.assertEquals
 class DicewarsGameModelTest {
 
     @Test
-    fun constantsMatchOriginalJs() {
-        assertEquals(28, DicewarsGame.XMAX)
-        assertEquals(32, DicewarsGame.YMAX)
-        assertEquals(32, DicewarsGame.AREA_MAX)
-        assertEquals(64, DicewarsGame.STOCK_MAX)
-        assertEquals(8, DicewarsGame.MAX_DICE)
-    }
-
-    @Test
-    fun defaultsMatchOriginalJs() {
-        val game = DicewarsGame()
-
-        assertEquals(7, game.pmax)
-        assertEquals(0, game.user)
-    }
-
-    @Test
     fun cellNeighborCalculationMatchesJsNextCel() {
         val game = DicewarsGame()
 

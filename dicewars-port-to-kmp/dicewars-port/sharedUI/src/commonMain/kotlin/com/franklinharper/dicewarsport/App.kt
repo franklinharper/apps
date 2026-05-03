@@ -41,13 +41,14 @@ import androidx.compose.ui.unit.dp
 import com.franklinharper.dicewarsport.presentation.components.MapRenderer
 import com.franklinharper.dicewarsport.theme.AppTheme
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 @Preview
 @Composable
 fun App(
     onThemeChanged: @Composable (isDark: Boolean) -> Unit = {},
 ) = AppTheme(onThemeChanged) {
-    val random = remember { IncrementingRandomSource() }
+    val random = remember { KotlinRandomSource() }
     val reducer = remember { GameReducer(random) }
     var state by remember {
         mutableStateOf(
@@ -318,13 +319,11 @@ private fun ColumnScope.Board(state: GameUiState, onAction: (GameAction) -> Unit
     Spacer(Modifier.height(8.dp))
 }
 
-private class IncrementingRandomSource : RandomSource {
-    private var next = 0
-
+private class KotlinRandomSource(
+    private val random: Random = Random.Default,
+) : RandomSource {
     override fun nextInt(bound: Int): Int {
         require(bound > 0)
-        val value = next % bound
-        next++
-        return value
+        return random.nextInt(bound)
     }
 }

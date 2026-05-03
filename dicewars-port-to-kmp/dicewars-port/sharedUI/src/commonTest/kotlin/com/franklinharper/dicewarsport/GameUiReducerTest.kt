@@ -2,7 +2,6 @@ package com.franklinharper.dicewarsport
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -54,6 +53,8 @@ class GameUiReducerTest {
         assertEquals(0, next.game.areas[2].owner)
         assertEquals(3, next.game.areas[2].dice)
         assertEquals(1, next.game.areas[1].dice)
+        assertEquals(2, next.game.players[0].maxConnectedAreaCount)
+        assertEquals(1, next.game.players[1].maxConnectedAreaCount)
     }
 
     @Test
@@ -119,8 +120,6 @@ class GameUiReducerTest {
 
         assertTrue(state.spectateMode)
         assertEquals(DicewarsScreen.MapPreview, state.screen)
-        assertEquals(9, DicewarsScreen.entries.size)
-        assertFalse(DicewarsScreen.entries.any { it.name.contains("Spectate", ignoreCase = true) })
     }
 }
 

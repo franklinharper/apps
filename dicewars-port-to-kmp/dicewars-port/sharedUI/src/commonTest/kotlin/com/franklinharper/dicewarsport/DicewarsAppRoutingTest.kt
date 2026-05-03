@@ -6,8 +6,7 @@ import kotlin.test.assertEquals
 class DicewarsAppRoutingTest {
 
     @Test
-    fun composeRoutingCoversExactlyTheTenScreenStates() {
+    fun routedScreensCoverEveryScreenState() {
         assertEquals(DicewarsScreen.entries.toSet(), routedDicewarsScreens())
-        assertEquals(9, routedDicewarsScreens().size)
     }
 }
