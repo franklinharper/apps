@@ -20,7 +20,7 @@ Progress status values:
 | 3 - Map generation | Done | Added `DicewarsMapGenerationTest`; first run failed with unresolved `makeMap`, `GameMap`, and `toRenderMap` | Ported `make_map`, `percolate`, and `set_area_line`; added renderer-compatible `GameMap`/`Territory` and adapter | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Adapter locks indexing: `GameMap.cells[cellIndex]` preserves JS area IDs (`1..31`), and `territories[areaId - 1]` stores that area. Used injected `RandomSource`; owner selection uses `nextInt(count)` for deterministic valid selection. |
 | 4 - Map renderer adaptation | Done | Added `MapRendererAdapterTest`; first run failed with missing renderer helpers/models (`id`, `HexGrid`, `HexGeometry`, label/click helpers) | Adapted BattleZone `MapRenderer.kt`, `TerritoryDrawer.kt`, `HexGrid`, `HexGeometry`, `GameColors`, and `UiConstants` into dicewars package; adjusted `GameMap`/`Territory` fields | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Renderer click callbacks still expose zero-based renderer index, while test helper locks Dicewars JS area ID mapping. Renderer remains UI-only; no rules embedded. |
 | 5 - Rules | Done | Added `DicewarsRulesTest`; first run failed with unresolved `isLegalAttack`, `BattleRoll`, `rollBattle`, `resolveBattle`, supply, turn, area-count, and history functions | Added pure rules in `DicewarsRules.kt`: legal attack, deterministic battle roll, battle application/history, supply, next player, connected-area count, history append | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Battle resolution is separate from animation; attacker wins only on `>`; supply uses stock cap 64 and owned areas below 8 dice only. |
-| 6 - AI | Not Started | Pending | Pending | Pending | Source: `ai_example`, `ai_default`, `ai_defensive` |
+| 6 - AI | Done | Added `DicewarsAiTest`; first run failed with unresolved `AiStrategy`, `Move`, `ExampleAi`, `DefaultAi`, and `DefensiveAi` | Added `DicewarsAi.kt` with `AiStrategy`, `Move`, `ExampleAi`, `DefaultAi`, and `DefensiveAi` using injected RNG where randomness is needed | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | AI returns `null` for no move instead of JS `0`; all returned moves are checked against `isLegalAttack`. |
 | 7 - UI state machine | Not Started | Pending | Pending | Pending | Reducer tests for screen transitions |
 | 8 - Compose UI | Not Started | Pending | Pending | Pending | Thin UI over state/render models |
 | 9 - Build validation | Not Started | Pending | Pending | Pending | Android/Desktop/Web/iOS validation |
@@ -254,6 +254,42 @@ Implemented/adapted from JS:
 - next-player skipping eliminated players
 - connected-area maximum count (`setAreaTc`)
 - `setHistory`
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: passed.
+
+### 2026-05-03 - Phase 6
+
+Added AI tests:
+
+```text
+sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/DicewarsAiTest.kt
+```
+
+Initial red run:
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: failed at compile time with unresolved AI API: `AiStrategy`, `Move`, `ExampleAi`, `DefaultAi`, and `DefensiveAi`.
+
+Implemented AI strategies:
+
+```text
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/DicewarsAi.kt
+```
+
+Ported/adapted from JS:
+
+- `ai_example.js` -> `ExampleAi`
+- `ai_default.js` -> `DefaultAi`
+- `ai_defensive.js` -> `DefensiveAi`
+
+Kotlin behavior uses `Move?`; no move is represented as `null` instead of JS `0`. Random strategies use injected `RandomSource`; `DefensiveAi` is deterministic.
 
 ```bash
 ./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
