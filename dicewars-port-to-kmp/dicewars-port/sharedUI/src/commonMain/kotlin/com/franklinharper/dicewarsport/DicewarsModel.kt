@@ -398,8 +398,8 @@ class DicewarsGame {
         }
 
         val diceToPlace = activeAreaCount * (averageDicePlacement - 1)
-        var player = 0
         for (i in 0 until diceToPlace) {
+            val player = i % pmax
             var count = 0
             for (areaNumber in 1 until AREA_MAX) {
                 val area = areas[areaNumber]
@@ -409,11 +409,9 @@ class DicewarsGame {
                 areaList[count] = areaNumber
                 count++
             }
-            if (count == 0) break
+            if (count == 0) continue
             val areaNumber = areaList[random.nextInt(count)]
             areas[areaNumber].dice++
-            player++
-            if (player >= pmax) player = 0
         }
     }
 
