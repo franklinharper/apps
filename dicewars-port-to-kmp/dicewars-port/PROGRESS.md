@@ -16,7 +16,7 @@ Progress status values:
 | 0A - Bootstrap and plan | Done | N/A | New app generated; plan and progress docs written | `kmp-app-generator --name=dicewars-port --id=com.franklinharper.dicewarsport --android --ios --desktop --web --tests dicewars-port` succeeded; generated 91 files | Created `IMPLEMENTATION_PLAN.md` and `PROGRESS.md` |
 | 0B - Baseline verification and tracking setup | Done | Added `DicewarsScreenContractTest.portHasSameNumberOfScreensAsOriginal`; `./gradlew :sharedUI:jvmTest --rerun-tasks` fails at compile with unresolved `DicewarsScreen` | Baseline commands/results recorded; generated source-set paths documented; `gradlew` executable bit restored | `./gradlew test` failed: generated `ComposeTest.simpleCheck` NPE in debug/release unit tests; `./gradlew :androidApp:assembleDebug` succeeded; `./gradlew :desktopApp:run` compiled/launched then timed out because app stayed open; `./gradlew :webApp:wasmJsBrowserDevelopmentRun` compiled and served at localhost:8080 then timed out because dev server stayed open | Source paths: common app code in `sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/`; common tests in `sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/`; platform entry points in `androidApp`, `desktopApp`, `webApp`, and `sharedUI/src/iosMain`. `local.properties` has empty `sdk.dir` warning. No implementation-plan path correction needed. |
 | 1 - Screen-count contract | Done | Reused red test from Phase 0B: `DicewarsScreenContractTest.portHasSameNumberOfScreensAsOriginal` failed with unresolved `DicewarsScreen` | Added `DicewarsScreen` enum with exactly 10 entries in commonMain | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Screen states: Loading, Title, MapPreview, HumanTurn, AiTurn, Battle, Supply, GameOver, Win, History |
-| 2 - Pure game model | Not Started | Pending | Pending | Pending | Source: `../dicewarsjs/game.js` |
+| 2 - Pure game model | Done | Added `DicewarsGameModelTest`; first run failed with unresolved `DicewarsGame` | Added common pure model types: `AreaData`, `PlayerData`, `CellNeighbors`, `HistoryData`, `DicewarsGame`, and `RandomSource` | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Ported JS constants/defaults and `next_cel` as `nextCell`; corrected expected odd-row neighbor values during red/green cycle |
 | 3 - Map generation | Not Started | Pending | Pending | Pending | Source: `make_map`, `percolate`, `set_area_line` |
 | 4 - Map renderer adaptation | Not Started | Pending | Pending | Pending | Reuse battlezone `MapRenderer.kt` and `TerritoryDrawer.kt` |
 | 5 - Rules | Not Started | Pending | Pending | Pending | Legal attack, battle, supply, turn, history |
@@ -117,3 +117,33 @@ The enum contains exactly the 10 required screen states: Loading, Title, MapPrev
 ```
 
 Result: passed. The screen-count contract test is green for the shared JVM test target.
+
+### 2026-05-03 - Phase 2
+
+Added model tests:
+
+```text
+sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/DicewarsGameModelTest.kt
+```
+
+Initial red run:
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: failed at compile time with unresolved `DicewarsGame`, as expected.
+
+Added pure common model:
+
+```text
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/DicewarsModel.kt
+```
+
+Implemented JS-derived constants/defaults and `next_cel` as `nextCell`. Included `RandomSource`, `AreaData`, `PlayerData`, `CellNeighbors`, `HistoryData`, and `DicewarsGame` storage needed by later phases.
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: passed after correcting test expectations for odd-row hex neighbors to match the JS algorithm.
