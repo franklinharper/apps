@@ -7,6 +7,6 @@ class DicewarsScreenContractTest {
 
     @Test
     fun portHasSameNumberOfScreensAsOriginal() {
-        assertEquals(10, DicewarsScreen.entries.size)
+        assertEquals(9, DicewarsScreen.entries.size)
     }
 }

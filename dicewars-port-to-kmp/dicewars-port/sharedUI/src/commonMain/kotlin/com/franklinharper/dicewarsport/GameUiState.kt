@@ -6,7 +6,6 @@ data class GameUiState(
     val selectedFrom: Int? = null,
     val selectedTo: Int? = null,
     val spectateMode: Boolean = false,
-    val pendingBattleRoll: BattleRoll? = null,
     val selectedPlayerCount: Int = game.pmax,
 )
 
@@ -19,7 +18,6 @@ sealed interface GameAction {
     data class TerritoryClicked(val territoryId: Int) : GameAction
     data object EndTurn : GameAction
     data object AiStep : GameAction
-    data object BattleAnimationFinished : GameAction
     data object SupplyAnimationFinished : GameAction
     data object OpenHistory : GameAction
     data object BackToTitle : GameAction
@@ -50,10 +48,9 @@ class GameReducer(
         is GameAction.TerritoryClicked -> onTerritoryClicked(state, action.territoryId)
         GameAction.EndTurn -> state.copy(screen = DicewarsScreen.Supply, selectedFrom = null, selectedTo = null)
         GameAction.AiStep -> onAiStep(state)
-        GameAction.BattleAnimationFinished -> onBattleFinished(state)
         GameAction.SupplyAnimationFinished -> onSupplyFinished(state)
         GameAction.OpenHistory -> state.copy(screen = DicewarsScreen.History)
-        GameAction.BackToTitle -> state.copy(screen = DicewarsScreen.Title, selectedFrom = null, selectedTo = null, pendingBattleRoll = null)
+        GameAction.BackToTitle -> state.copy(screen = DicewarsScreen.Title, selectedFrom = null, selectedTo = null)
     }
 
     private fun onTerritoryClicked(state: GameUiState, territoryId: Int): GameUiState {
@@ -77,11 +74,17 @@ class GameReducer(
             defenderDiceCount = state.game.areas[territoryId].dice,
             random = random,
         )
+        state.game.resolveBattle(selectedFrom, territoryId, roll)
+
+        val terminalScreen = terminalScreenOrNull(state.game, state.spectateMode)
+        if (terminalScreen != null) {
+            return state.copy(screen = terminalScreen, selectedFrom = null, selectedTo = null)
+        }
+
         return state.copy(
-            screen = DicewarsScreen.Battle,
-            selectedFrom = selectedFrom,
-            selectedTo = territoryId,
-            pendingBattleRoll = roll,
+            screen = turnScreenFor(state.game, state.spectateMode),
+            selectedFrom = null,
+            selectedTo = null,
         )
     }
 
@@ -97,32 +100,17 @@ class GameReducer(
             defenderDiceCount = state.game.areas[move.to].dice,
             random = random,
         )
-        return state.copy(
-            screen = DicewarsScreen.Battle,
-            selectedFrom = move.from,
-            selectedTo = move.to,
-            pendingBattleRoll = roll,
-        )
-    }
-
-    private fun onBattleFinished(state: GameUiState): GameUiState {
-        val from = state.selectedFrom
-        val to = state.selectedTo
-        val roll = state.pendingBattleRoll
-        if (from != null && to != null && roll != null) {
-            state.game.resolveBattle(from, to, roll)
-        }
+        state.game.resolveBattle(move.from, move.to, roll)
 
         val terminalScreen = terminalScreenOrNull(state.game, state.spectateMode)
         if (terminalScreen != null) {
-            return state.copy(screen = terminalScreen, selectedFrom = null, selectedTo = null, pendingBattleRoll = null)
+            return state.copy(screen = terminalScreen, selectedFrom = null, selectedTo = null)
         }
 
         return state.copy(
             screen = turnScreenFor(state.game, state.spectateMode),
             selectedFrom = null,
             selectedTo = null,
-            pendingBattleRoll = null,
         )
     }
 

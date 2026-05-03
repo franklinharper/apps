@@ -43,15 +43,17 @@ class GameUiReducerTest {
     }
 
     @Test
-    fun humanTurnTransitionsToBattleAfterTwoLegalClicks() {
+    fun humanTurnResolvesAttackAndStaysOnTurnAfterTwoLegalClicks() {
         val reducer = reducer()
         val selected = reducer.reduce(turnState(DicewarsScreen.HumanTurn), GameAction.TerritoryClicked(1))
-        val battle = reducer.reduce(selected, GameAction.TerritoryClicked(2))
+        val next = reducer.reduce(selected, GameAction.TerritoryClicked(2))
 
-        assertEquals(DicewarsScreen.Battle, battle.screen)
-        assertEquals(1, battle.selectedFrom)
-        assertEquals(2, battle.selectedTo)
-        assertNotNull(battle.pendingBattleRoll)
+        assertEquals(DicewarsScreen.HumanTurn, next.screen)
+        assertEquals(null, next.selectedFrom)
+        assertEquals(null, next.selectedTo)
+        assertEquals(0, next.game.areas[2].owner)
+        assertEquals(3, next.game.areas[2].dice)
+        assertEquals(1, next.game.areas[1].dice)
     }
 
     @Test
@@ -62,32 +64,34 @@ class GameUiReducerTest {
     }
 
     @Test
-    fun aiTurnTransitionsToBattleOrSupply() {
-        val battle = reducer(ai = FixedMoveAi(Move(2, 1))).reduce(turnState(DicewarsScreen.AiTurn, currentPlayer = 1), GameAction.AiStep)
+    fun aiTurnResolvesAttackOrTransitionsToSupply() {
+        val next = reducer(ai = FixedMoveAi(Move(2, 1))).reduce(turnState(DicewarsScreen.AiTurn, currentPlayer = 1), GameAction.AiStep)
         val supply = reducer(ai = FixedMoveAi(null)).reduce(turnState(DicewarsScreen.AiTurn, currentPlayer = 1), GameAction.AiStep)
 
-        assertEquals(DicewarsScreen.Battle, battle.screen)
+        assertEquals(DicewarsScreen.AiTurn, next.screen)
         assertEquals(DicewarsScreen.Supply, supply.screen)
     }
 
     @Test
-    fun battleTransitionsToWinGameOverOrNextTurn() {
-        val next = reducer().reduce(battleState(), GameAction.BattleAnimationFinished)
-        assertEquals(DicewarsScreen.HumanTurn, next.screen)
-
+    fun immediateAttackResolutionTransitionsToWinOrGameOver() {
         val gameOverGame = uiGame()
-        gameOverGame.areas[1].owner = 1
-        gameOverGame.setAreaTc(0)
-        gameOverGame.setAreaTc(1)
-        val gameOver = reducer().reduce(battleState(gameOverGame), GameAction.BattleAnimationFinished)
+        gameOverGame.areas[1].dice = 1
+        gameOverGame.areas[2].dice = 8
+        gameOverGame.turnIndex = 1
+        val gameOver = reducer(ai = FixedMoveAi(Move(2, 1))).reduce(
+            GameUiState(screen = DicewarsScreen.AiTurn, game = gameOverGame),
+            GameAction.AiStep,
+        )
         assertEquals(DicewarsScreen.GameOver, gameOver.screen)
 
         val winGame = uiGame()
-        winGame.areas[2].owner = 0
         winGame.areas[3].owner = 0
         winGame.setAreaTc(0)
         winGame.setAreaTc(1)
-        val win = reducer().reduce(battleState(winGame), GameAction.BattleAnimationFinished)
+        val win = reducer().reduce(
+            reducer().reduce(GameUiState(screen = DicewarsScreen.HumanTurn, game = winGame), GameAction.TerritoryClicked(1)),
+            GameAction.TerritoryClicked(2),
+        )
         assertEquals(DicewarsScreen.Win, win.screen)
     }
 
@@ -115,7 +119,7 @@ class GameUiReducerTest {
 
         assertTrue(state.spectateMode)
         assertEquals(DicewarsScreen.MapPreview, state.screen)
-        assertEquals(10, DicewarsScreen.entries.size)
+        assertEquals(9, DicewarsScreen.entries.size)
         assertFalse(DicewarsScreen.entries.any { it.name.contains("Spectate", ignoreCase = true) })
     }
 }
@@ -143,14 +147,6 @@ private fun turnState(screen: DicewarsScreen, currentPlayer: Int = 0): GameUiSta
     game.turnIndex = currentPlayer
     return GameUiState(screen = screen, game = game)
 }
-
-private fun battleState(game: DicewarsGame = uiGame()): GameUiState = GameUiState(
-    screen = DicewarsScreen.Battle,
-    game = game,
-    selectedFrom = 1,
-    selectedTo = 2,
-    pendingBattleRoll = BattleRoll(listOf(6), listOf(1), 6, 1, true),
-)
 
 private fun uiGame(): DicewarsGame {
     val game = DicewarsGame()

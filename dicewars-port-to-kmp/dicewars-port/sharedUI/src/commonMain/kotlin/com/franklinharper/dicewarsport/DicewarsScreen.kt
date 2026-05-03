@@ -6,7 +6,6 @@ enum class DicewarsScreen {
     MapPreview,
     HumanTurn,
     AiTurn,
-    Battle,
     Supply,
     GameOver,
     Win,

@@ -1,18 +1,27 @@
 package com.franklinharper.dicewarsport
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,7 +75,6 @@ fun DicewarsApp(
         DicewarsScreen.MapPreview -> MapPreviewScreen(state, onAction)
         DicewarsScreen.HumanTurn -> GameBoardScreen(state, onAction, title = "Your turn")
         DicewarsScreen.AiTurn -> GameBoardScreen(state, onAction, title = "AI turn")
-        DicewarsScreen.Battle -> BattleScreen(state, onAction)
         DicewarsScreen.Supply -> SupplyScreen(state, onAction)
         DicewarsScreen.GameOver -> GameOverScreen(onAction)
         DicewarsScreen.Win -> WinScreen(onAction)
@@ -79,7 +88,6 @@ fun routedDicewarsScreens(): Set<DicewarsScreen> = setOf(
     DicewarsScreen.MapPreview,
     DicewarsScreen.HumanTurn,
     DicewarsScreen.AiTurn,
-    DicewarsScreen.Battle,
     DicewarsScreen.Supply,
     DicewarsScreen.GameOver,
     DicewarsScreen.Win,
@@ -99,11 +107,20 @@ fun LoadingScreen(onAction: (GameAction) -> Unit) {
 
 @Composable
 fun TitleScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Dicewars") {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Text(
+        text = "How many players?",
+        style = MaterialTheme.typography.titleMedium,
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
         for (count in 2..8) {
             val selected = count == state.selectedPlayerCount
             Button(
                 onClick = { onAction(GameAction.SelectPlayerCount(count)) },
+                modifier = Modifier.defaultMinSize(minWidth = 40.dp, minHeight = 40.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 colors = if (selected) {
                     ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -121,7 +138,11 @@ fun TitleScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaf
 }
 
 @Composable
-fun MapPreviewScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Play this board?") {
+fun MapPreviewScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
+    title = "Play this board?",
+    showBackButton = true,
+    onBack = { onAction(GameAction.BackToTitle) },
+) {
     Board(state, onAction)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = { onAction(GameAction.AcceptMap) }) { Text("Play") }
@@ -130,9 +151,26 @@ fun MapPreviewScreen(state: GameUiState, onAction: (GameAction) -> Unit) = Scree
 }
 
 @Composable
-fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: String) = ScreenScaffold(title) {
+fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: String) = ScreenScaffold(
+    title = title,
+    showBackButton = true,
+    onBack = { onAction(GameAction.BackToTitle) },
+) {
     Board(state, onAction)
+    Text(
+        text = "Reinforcements",
+        style = MaterialTheme.typography.titleSmall,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    PlayerStatusBar(state.game)
     if (state.screen == DicewarsScreen.HumanTurn) {
+        Text(
+            text = "1. Click your area. 2. Click neighbor to attack.",
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Button(onClick = { onAction(GameAction.EndTurn) }) { Text("End turn") }
     } else {
         Button(onClick = { onAction(GameAction.AiStep) }) { Text("AI step") }
@@ -140,54 +178,105 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
 }
 
 @Composable
-fun BattleScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Battle") {
-    val roll = state.pendingBattleRoll
-    Text("${state.selectedFrom} attacks ${state.selectedTo}")
-    if (roll != null) {
-        Text("${roll.attackerTotal} vs ${roll.defenderTotal}")
-        Text(if (roll.success) "Success" else "Failure")
-    }
-    Button(onClick = { onAction(GameAction.BattleAnimationFinished) }) { Text("Finish battle") }
-}
-
-@Composable
-fun SupplyScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Supply") {
+fun SupplyScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
+    title = "Supply",
+    showBackButton = true,
+    onBack = { onAction(GameAction.BackToTitle) },
+) {
     Text("Player ${state.game.currentPlayer()} receives supply")
     Button(onClick = { onAction(GameAction.SupplyAnimationFinished) }) { Text("Continue") }
 }
 
 @Composable
-fun GameOverScreen(onAction: (GameAction) -> Unit) = ScreenScaffold("Game Over") {
+fun GameOverScreen(onAction: (GameAction) -> Unit) = ScreenScaffold(
+    title = "Game Over",
+    showBackButton = true,
+    onBack = { onAction(GameAction.BackToTitle) },
+) {
     Button(onClick = { onAction(GameAction.OpenHistory) }) { Text("History") }
     Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
 }
 
 @Composable
-fun WinScreen(onAction: (GameAction) -> Unit) = ScreenScaffold("You Win") {
+fun WinScreen(onAction: (GameAction) -> Unit) = ScreenScaffold(
+    title = "You Win",
+    showBackButton = true,
+    onBack = { onAction(GameAction.BackToTitle) },
+) {
     Button(onClick = { onAction(GameAction.OpenHistory) }) { Text("History") }
     Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
 }
 
 @Composable
-fun HistoryScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("History") {
+fun HistoryScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
+    title = "History",
+    showBackButton = true,
+    onBack = { onAction(GameAction.BackToTitle) },
+) {
     Text("${state.game.history.size} recorded events")
     Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
 }
 
 @Composable
-private fun ScreenScaffold(title: String, content: ColumnScopeContent) {
+private fun PlayerStatusBar(game: DicewarsGame) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        for (player in 0 until game.pmax) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(GameColors.getPlayerColor(player)),
+                )
+                Text(
+                    text = "${game.players[player].maxConnectedAreaCount}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScreenScaffold(
+    title: String,
+    showBackButton: Boolean = false,
+    onBack: (() -> Unit)? = null,
+    content: ColumnScopeContent,
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (showBackButton && onBack != null) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.align(Alignment.CenterStart),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
             content()
         }
     }

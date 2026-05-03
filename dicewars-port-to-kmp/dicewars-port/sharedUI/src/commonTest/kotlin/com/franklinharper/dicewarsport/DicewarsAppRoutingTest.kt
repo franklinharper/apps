@@ -8,6 +8,6 @@ class DicewarsAppRoutingTest {
     @Test
     fun composeRoutingCoversExactlyTheTenScreenStates() {
         assertEquals(DicewarsScreen.entries.toSet(), routedDicewarsScreens())
-        assertEquals(10, routedDicewarsScreens().size)
+        assertEquals(9, routedDicewarsScreens().size)
     }
 }

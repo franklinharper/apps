@@ -31,6 +31,7 @@ kotlin {
             api(libs.compose.resources)
             api(libs.compose.ui.tooling.preview)
             api(libs.compose.material3)
+            api(compose.materialIconsExtended)
         }
 
         commonTest.dependencies {

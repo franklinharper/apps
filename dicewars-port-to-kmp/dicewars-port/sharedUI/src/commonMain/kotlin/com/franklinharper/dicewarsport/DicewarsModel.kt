@@ -181,6 +181,7 @@ class DicewarsGame {
         createAreaLines()
         placeDice(random)
         ensureSymmetricAdjacency()
+        for (player in 0 until pmax) setAreaTc(player)
 
         return toRenderMap()
     }
