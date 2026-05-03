@@ -19,7 +19,7 @@ Progress status values:
 | 2 - Pure game model | Done | Added `DicewarsGameModelTest`; first run failed with unresolved `DicewarsGame` | Added common pure model types: `AreaData`, `PlayerData`, `CellNeighbors`, `HistoryData`, `DicewarsGame`, and `RandomSource` | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Ported JS constants/defaults and `next_cel` as `nextCell`; corrected expected odd-row neighbor values during red/green cycle |
 | 3 - Map generation | Done | Added `DicewarsMapGenerationTest`; first run failed with unresolved `makeMap`, `GameMap`, and `toRenderMap` | Ported `make_map`, `percolate`, and `set_area_line`; added renderer-compatible `GameMap`/`Territory` and adapter | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Adapter locks indexing: `GameMap.cells[cellIndex]` preserves JS area IDs (`1..31`), and `territories[areaId - 1]` stores that area. Used injected `RandomSource`; owner selection uses `nextInt(count)` for deterministic valid selection. |
 | 4 - Map renderer adaptation | Done | Added `MapRendererAdapterTest`; first run failed with missing renderer helpers/models (`id`, `HexGrid`, `HexGeometry`, label/click helpers) | Adapted BattleZone `MapRenderer.kt`, `TerritoryDrawer.kt`, `HexGrid`, `HexGeometry`, `GameColors`, and `UiConstants` into dicewars package; adjusted `GameMap`/`Territory` fields | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Renderer click callbacks still expose zero-based renderer index, while test helper locks Dicewars JS area ID mapping. Renderer remains UI-only; no rules embedded. |
-| 5 - Rules | Not Started | Pending | Pending | Pending | Legal attack, battle, supply, turn, history |
+| 5 - Rules | Done | Added `DicewarsRulesTest`; first run failed with unresolved `isLegalAttack`, `BattleRoll`, `rollBattle`, `resolveBattle`, supply, turn, area-count, and history functions | Added pure rules in `DicewarsRules.kt`: legal attack, deterministic battle roll, battle application/history, supply, next player, connected-area count, history append | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Battle resolution is separate from animation; attacker wins only on `>`; supply uses stock cap 64 and owned areas below 8 dice only. |
 | 6 - AI | Not Started | Pending | Pending | Pending | Source: `ai_example`, `ai_default`, `ai_defensive` |
 | 7 - UI state machine | Not Started | Pending | Pending | Pending | Reducer tests for screen transitions |
 | 8 - Compose UI | Not Started | Pending | Pending | Pending | Thin UI over state/render models |
@@ -214,6 +214,46 @@ sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/UiConstants.kt
 ```
 
 Updated `GameMap`/`Territory` to expose renderer-required fields (`gridWidth`, `gridHeight`, `maxTerritories`, `id`) while preserving Phase 3 adapter behavior. Added public test hooks for label positions, Dicewars area-id click mapping, and dice-count label visibility.
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: passed.
+
+### 2026-05-03 - Phase 5
+
+Added rules tests:
+
+```text
+sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/DicewarsRulesTest.kt
+```
+
+Initial red run:
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: failed at compile time with unresolved rules API: `isLegalAttack`, `BattleRoll`, `rollBattle`, `resolveBattle`, `startSupply`, `supplyOneDie`, `nextPlayer`, `setAreaTc`, and `setHistory`.
+
+Implemented pure rules:
+
+```text
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/DicewarsRules.kt
+```
+
+Implemented/adapted from JS:
+
+- legal attack checks
+- deterministic `BattleRoll`
+- attacker wins only when attacker total is greater than defender total
+- battle result application and attack history
+- supply stock calculation capped at 64
+- one-die supply to owned areas below 8 dice and supply history
+- next-player skipping eliminated players
+- connected-area maximum count (`setAreaTc`)
+- `setHistory`
 
 ```bash
 ./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
