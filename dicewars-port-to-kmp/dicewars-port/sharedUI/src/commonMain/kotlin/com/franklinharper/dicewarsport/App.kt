@@ -1,104 +1,195 @@
 package com.franklinharper.dicewarsport
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import dicewars_port.sharedui.generated.resources.*
+import com.franklinharper.dicewarsport.presentation.components.MapRenderer
 import com.franklinharper.dicewarsport.theme.AppTheme
-import com.franklinharper.dicewarsport.theme.LocalThemeIsDark
-import kotlinx.coroutines.isActive
-import org.jetbrains.compose.resources.Font
-import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.vectorResource
 
 @Preview
 @Composable
 fun App(
-    onThemeChanged: @Composable (isDark: Boolean) -> Unit = {}
+    onThemeChanged: @Composable (isDark: Boolean) -> Unit = {},
 ) = AppTheme(onThemeChanged) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = stringResource(Res.string.cyclone),
-            fontFamily = FontFamily(Font(Res.font.IndieFlower_Regular)),
-            style = MaterialTheme.typography.displayLarge
+    val random = remember { IncrementingRandomSource() }
+    val reducer = remember { GameReducer(random) }
+    var state by remember {
+        mutableStateOf(
+            GameUiState(
+                screen = DicewarsScreen.Loading,
+                game = DicewarsGame().also { it.makeMap(random) },
+            ),
         )
+    }
 
-        var isRotating by remember { mutableStateOf(false) }
+    DicewarsApp(
+        state = state,
+        onAction = { action -> state = reducer.reduce(state, action) },
+    )
+}
 
-        val rotate = remember { Animatable(0f) }
-        val target = 360f
-        if (isRotating) {
-            LaunchedEffect(Unit) {
-                while (isActive) {
-                    val remaining = (target - rotate.value) / target
-                    rotate.animateTo(target, animationSpec = tween((1_000 * remaining).toInt(), easing = LinearEasing))
-                    rotate.snapTo(0f)
-                }
-            }
-        }
+@Composable
+fun DicewarsApp(
+    state: GameUiState,
+    onAction: (GameAction) -> Unit = {},
+) {
+    when (state.screen) {
+        DicewarsScreen.Loading -> LoadingScreen(onAction)
+        DicewarsScreen.Title -> TitleScreen(onAction)
+        DicewarsScreen.MapPreview -> MapPreviewScreen(state, onAction)
+        DicewarsScreen.HumanTurn -> GameBoardScreen(state, onAction, title = "Your turn")
+        DicewarsScreen.AiTurn -> GameBoardScreen(state, onAction, title = "AI turn")
+        DicewarsScreen.Battle -> BattleScreen(state, onAction)
+        DicewarsScreen.Supply -> SupplyScreen(state, onAction)
+        DicewarsScreen.GameOver -> GameOverScreen(onAction)
+        DicewarsScreen.Win -> WinScreen(onAction)
+        DicewarsScreen.History -> HistoryScreen(state, onAction)
+    }
+}
 
-        Image(
-            modifier = Modifier
-                .size(250.dp)
-                .padding(16.dp)
-                .run { rotate(rotate.value) },
-            imageVector = vectorResource(Res.drawable.ic_cyclone),
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
-            contentDescription = null
-        )
+fun routedDicewarsScreens(): Set<DicewarsScreen> = setOf(
+    DicewarsScreen.Loading,
+    DicewarsScreen.Title,
+    DicewarsScreen.MapPreview,
+    DicewarsScreen.HumanTurn,
+    DicewarsScreen.AiTurn,
+    DicewarsScreen.Battle,
+    DicewarsScreen.Supply,
+    DicewarsScreen.GameOver,
+    DicewarsScreen.Win,
+    DicewarsScreen.History,
+)
 
-        ElevatedButton(
-            modifier = Modifier
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-                .widthIn(min = 200.dp),
-            onClick = { isRotating = !isRotating },
-            content = {
-                Icon(vectorResource(Res.drawable.ic_rotate_right), contentDescription = null)
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text(
-                    stringResource(if (isRotating) Res.string.stop else Res.string.run)
-                )
-            }
-        )
+@Composable
+fun LoadingScreen(onAction: (GameAction) -> Unit) = ScreenScaffold("Loading") {
+    Button(onClick = { onAction(GameAction.LoadingFinished) }) { Text("Continue") }
+}
 
-        var isDark by LocalThemeIsDark.current
-        val icon = remember(isDark) {
-            if (isDark) Res.drawable.ic_light_mode
-            else Res.drawable.ic_dark_mode
-        }
+@Composable
+fun TitleScreen(onAction: (GameAction) -> Unit) = ScreenScaffold("Dicewars") {
+    Button(onClick = { onAction(GameAction.StartPressed) }) { Text("Start") }
+    Button(onClick = { onAction(GameAction.StartSpectate) }) { Text("Spectate") }
+}
 
-        ElevatedButton(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).widthIn(min = 200.dp),
-            onClick = { isDark = !isDark },
-            content = {
-                Icon(vectorResource(icon), contentDescription = null)
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text(stringResource(Res.string.theme))
-            }
-        )
+@Composable
+fun MapPreviewScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Play this board?") {
+    Board(state, onAction)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = { onAction(GameAction.AcceptMap) }) { Text("Play") }
+        Button(onClick = { onAction(GameAction.RejectMap) }) { Text("New board") }
+    }
+}
 
-        val uriHandler = LocalUriHandler.current
-        TextButton(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).widthIn(min = 200.dp),
-            onClick = { uriHandler.openUri("https://github.com/terrakok") },
+@Composable
+fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: String) = ScreenScaffold(title) {
+    Board(state, onAction)
+    if (state.screen == DicewarsScreen.HumanTurn) {
+        Button(onClick = { onAction(GameAction.EndTurn) }) { Text("End turn") }
+    } else {
+        Button(onClick = { onAction(GameAction.AiStep) }) { Text("AI step") }
+    }
+}
+
+@Composable
+fun BattleScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Battle") {
+    val roll = state.pendingBattleRoll
+    Text("${state.selectedFrom} attacks ${state.selectedTo}")
+    if (roll != null) {
+        Text("${roll.attackerTotal} vs ${roll.defenderTotal}")
+        Text(if (roll.success) "Success" else "Failure")
+    }
+    Button(onClick = { onAction(GameAction.BattleAnimationFinished) }) { Text("Finish battle") }
+}
+
+@Composable
+fun SupplyScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Supply") {
+    Text("Player ${state.game.currentPlayer()} receives supply")
+    Button(onClick = { onAction(GameAction.SupplyAnimationFinished) }) { Text("Continue") }
+}
+
+@Composable
+fun GameOverScreen(onAction: (GameAction) -> Unit) = ScreenScaffold("Game Over") {
+    Button(onClick = { onAction(GameAction.OpenHistory) }) { Text("History") }
+    Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
+}
+
+@Composable
+fun WinScreen(onAction: (GameAction) -> Unit) = ScreenScaffold("You Win") {
+    Button(onClick = { onAction(GameAction.OpenHistory) }) { Text("History") }
+    Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
+}
+
+@Composable
+fun HistoryScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("History") {
+    Text("${state.game.history.size} recorded events")
+    Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
+}
+
+@Composable
+private fun ScreenScaffold(title: String, content: ColumnScopeContent) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(stringResource(Res.string.open_github))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            content()
         }
+    }
+}
+
+private typealias ColumnScopeContent = @Composable () -> Unit
+
+@Composable
+private fun Board(state: GameUiState, onAction: (GameAction) -> Unit) {
+    val map = remember(state.game) { state.game.toRenderMap() }
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        MapRenderer(
+            map = map,
+            cellWidth = 10f,
+            cellHeight = 7f,
+            fontSize = 8f,
+            highlightedTerritories = listOfNotNull(state.selectedFrom?.minus(1), state.selectedTo?.minus(1)).toSet(),
+            attackFromTerritory = state.selectedFrom?.minus(1),
+            onTerritoryClick = { territoryIndex -> onAction(GameAction.TerritoryClicked(territoryIndex + 1)) },
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+}
+
+private class IncrementingRandomSource : RandomSource {
+    private var next = 0
+
+    override fun nextInt(bound: Int): Int {
+        require(bound > 0)
+        val value = next % bound
+        next++
+        return value
     }
 }

@@ -22,7 +22,7 @@ Progress status values:
 | 5 - Rules | Done | Added `DicewarsRulesTest`; first run failed with unresolved `isLegalAttack`, `BattleRoll`, `rollBattle`, `resolveBattle`, supply, turn, area-count, and history functions | Added pure rules in `DicewarsRules.kt`: legal attack, deterministic battle roll, battle application/history, supply, next player, connected-area count, history append | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Battle resolution is separate from animation; attacker wins only on `>`; supply uses stock cap 64 and owned areas below 8 dice only. |
 | 6 - AI | Done | Added `DicewarsAiTest`; first run failed with unresolved `AiStrategy`, `Move`, `ExampleAi`, `DefaultAi`, and `DefensiveAi` | Added `DicewarsAi.kt` with `AiStrategy`, `Move`, `ExampleAi`, `DefaultAi`, and `DefensiveAi` using injected RNG where randomness is needed | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | AI returns `null` for no move instead of JS `0`; all returned moves are checked against `isLegalAttack`. |
 | 7 - UI state machine | Done | Added `GameUiReducerTest`; first run failed with unresolved `GameUiState`, `GameAction`, and `GameReducer` | Added reducer/state/actions in `GameUiState.kt`; transitions cover the 10-screen flow and spectate mode reuse | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Added `AiStep` internal action to drive AI turn tests; spectate remains `spectateMode = true` and does not add a screen. |
-| 8 - Compose UI | Not Started | Pending | Pending | Pending | Thin UI over state/render models |
+| 8 - Compose UI | Done | Added `DicewarsAppRoutingTest`; first run failed with unresolved `routedDicewarsScreens` | Replaced generated sample UI with `DicewarsApp` routing, basic screens, board via `MapRenderer`, and action callbacks | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | UI remains thin over `GameUiState`/`GameReducer`; routes exactly the 10 `DicewarsScreen` states. |
 | 9 - Build validation | Not Started | Pending | Pending | Pending | Android/Desktop/Web/iOS validation |
 
 ## Tracking Procedure
@@ -334,6 +334,43 @@ Implemented:
 - Win/GameOver -> History
 - History -> Title
 - Spectate mode as `spectateMode = true`, reusing existing screens only
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: passed.
+
+### 2026-05-03 - Phase 8
+
+Added Compose routing test:
+
+```text
+sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/DicewarsAppRoutingTest.kt
+```
+
+Initial red run:
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: failed at compile time with unresolved `routedDicewarsScreens`.
+
+Replaced generated sample UI with Dicewars UI routing:
+
+```text
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/App.kt
+```
+
+Implemented:
+
+- `DicewarsApp(state, onAction)` routing over all 10 screens
+- placeholder screen composables for Loading, Title, MapPreview, Battle, Supply, GameOver, Win, History
+- `GameBoardScreen` for both HumanTurn and AiTurn
+- board rendering through adapted `MapRenderer`
+- click/action callbacks into `GameAction`
+- `routedDicewarsScreens()` test hook to lock routing coverage to the 10-screen contract
 
 ```bash
 ./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
