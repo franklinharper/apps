@@ -40,6 +40,7 @@ data class HistoryData(
 )
 
 data class Territory(
+    val id: Int,
     val owner: Int,
     val armyCount: Int,
     val centerPos: Int,
@@ -48,12 +49,16 @@ data class Territory(
 )
 
 data class GameMap(
-    val width: Int,
-    val height: Int,
+    val gridWidth: Int,
+    val gridHeight: Int,
+    val maxTerritories: Int,
     val cells: IntArray,
     val territories: List<Territory>,
     val cellNeighbors: List<CellNeighbors>,
-)
+) {
+    val width: Int = gridWidth
+    val height: Int = gridHeight
+}
 
 class DicewarsGame {
     companion object {
@@ -425,12 +430,14 @@ class DicewarsGame {
 }
 
 fun DicewarsGame.toRenderMap(): GameMap = GameMap(
-    width = DicewarsGame.XMAX,
-    height = DicewarsGame.YMAX,
+    gridWidth = DicewarsGame.XMAX,
+    gridHeight = DicewarsGame.YMAX,
+    maxTerritories = DicewarsGame.AREA_MAX,
     cells = cells.copyOf(),
     territories = (1 until DicewarsGame.AREA_MAX).map { areaNumber ->
         val area = areas[areaNumber]
         Territory(
+            id = areaNumber,
             owner = area.owner,
             armyCount = area.dice,
             centerPos = area.centerPos,

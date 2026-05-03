@@ -18,7 +18,7 @@ Progress status values:
 | 1 - Screen-count contract | Done | Reused red test from Phase 0B: `DicewarsScreenContractTest.portHasSameNumberOfScreensAsOriginal` failed with unresolved `DicewarsScreen` | Added `DicewarsScreen` enum with exactly 10 entries in commonMain | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Screen states: Loading, Title, MapPreview, HumanTurn, AiTurn, Battle, Supply, GameOver, Win, History |
 | 2 - Pure game model | Done | Added `DicewarsGameModelTest`; first run failed with unresolved `DicewarsGame` | Added common pure model types: `AreaData`, `PlayerData`, `CellNeighbors`, `HistoryData`, `DicewarsGame`, and `RandomSource` | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Ported JS constants/defaults and `next_cel` as `nextCell`; corrected expected odd-row neighbor values during red/green cycle |
 | 3 - Map generation | Done | Added `DicewarsMapGenerationTest`; first run failed with unresolved `makeMap`, `GameMap`, and `toRenderMap` | Ported `make_map`, `percolate`, and `set_area_line`; added renderer-compatible `GameMap`/`Territory` and adapter | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Adapter locks indexing: `GameMap.cells[cellIndex]` preserves JS area IDs (`1..31`), and `territories[areaId - 1]` stores that area. Used injected `RandomSource`; owner selection uses `nextInt(count)` for deterministic valid selection. |
-| 4 - Map renderer adaptation | Not Started | Pending | Pending | Pending | Reuse battlezone `MapRenderer.kt` and `TerritoryDrawer.kt` |
+| 4 - Map renderer adaptation | Done | Added `MapRendererAdapterTest`; first run failed with missing renderer helpers/models (`id`, `HexGrid`, `HexGeometry`, label/click helpers) | Adapted BattleZone `MapRenderer.kt`, `TerritoryDrawer.kt`, `HexGrid`, `HexGeometry`, `GameColors`, and `UiConstants` into dicewars package; adjusted `GameMap`/`Territory` fields | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Renderer click callbacks still expose zero-based renderer index, while test helper locks Dicewars JS area ID mapping. Renderer remains UI-only; no rules embedded. |
 | 5 - Rules | Not Started | Pending | Pending | Pending | Legal attack, battle, supply, turn, history |
 | 6 - AI | Not Started | Pending | Pending | Pending | Source: `ai_example`, `ai_default`, `ai_defensive` |
 | 7 - UI state machine | Not Started | Pending | Pending | Pending | Reducer tests for screen transitions |
@@ -179,6 +179,41 @@ Ported/adapted:
 - `DicewarsGame.toRenderMap()` adapter
 
 Indexing decision: `GameMap.cells[cellIndex]` preserves the JS area ID (`1..31` for active territories, `0` for empty/sea). The renderer territory list is zero-based, so area `N` maps to `territories[N - 1]`. Tests lock this down.
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: passed.
+
+### 2026-05-03 - Phase 4
+
+Added renderer adaptation tests:
+
+```text
+sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/MapRendererAdapterTest.kt
+```
+
+Initial red run:
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: failed at compile time with missing renderer-required fields/helpers (`Territory.id`, `HexGrid`, `HexGeometry`, `computeTerritoryLabelPositionsForTest`, `findDicewarsTerritoryAtPositionForTest`, `visibleDiceCountLabelsForTest`).
+
+Adapted BattleZone renderer code and dependencies into the Dicewars package:
+
+```text
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/presentation/components/MapRenderer.kt
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/presentation/components/TerritoryDrawer.kt
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/HexGrid.kt
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/HexGeometry.kt
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/Colors.kt
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/UiConstants.kt
+```
+
+Updated `GameMap`/`Territory` to expose renderer-required fields (`gridWidth`, `gridHeight`, `maxTerritories`, `id`) while preserving Phase 3 adapter behavior. Added public test hooks for label positions, Dicewars area-id click mapping, and dice-count label visibility.
 
 ```bash
 ./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
