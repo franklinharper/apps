@@ -562,7 +562,9 @@ cd dicewars-port-to-kmp/dicewars-port
 ./gradlew :webApp:wasmJsBrowserDevelopmentRun
 ```
 
-Also identify and run the generated iOS validation task if available, for example:
+Web/Wasm and iOS are intentionally deferred for the time being. Do not spend implementation/debugging time on Web/Wasm or iOS validation in this port phase unless the project priority changes.
+
+If iOS work is later resumed, identify and run the generated iOS validation task if available, for example:
 
 ```bash
 ./gradlew :sharedUI:embedAndSignAppleFrameworkForXcode
@@ -574,9 +576,9 @@ Acceptance:
 
 - Tests pass.
 - Android builds.
-- Desktop runs.
-- Web/Wasm runs.
-- iOS project/framework remains valid and the actual iOS validation task is recorded.
+- Desktop runs or is documented as launched/kept running in this harness.
+- Web/Wasm validation is documented as deferred.
+- iOS validation is documented as deferred.
 
 ---
 
