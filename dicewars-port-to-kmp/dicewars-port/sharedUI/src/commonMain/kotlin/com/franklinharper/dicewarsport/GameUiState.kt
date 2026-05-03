@@ -7,6 +7,7 @@ data class GameUiState(
     val selectedTo: Int? = null,
     val spectateMode: Boolean = false,
     val pendingBattleRoll: BattleRoll? = null,
+    val selectedPlayerCount: Int = game.pmax,
 )
 
 sealed interface GameAction {
@@ -33,9 +34,13 @@ class GameReducer(
         GameAction.LoadingFinished -> state.copy(screen = DicewarsScreen.Title)
         is GameAction.SelectPlayerCount -> {
             state.game.pmax = action.count
-            state
+            state.copy(selectedPlayerCount = action.count)
         }
-        GameAction.StartPressed -> state.copy(screen = DicewarsScreen.MapPreview)
+        GameAction.StartPressed -> {
+            state.game.pmax = state.selectedPlayerCount
+            state.game.makeMap(random)
+            state.copy(screen = DicewarsScreen.MapPreview)
+        }
         GameAction.StartSpectate -> state.copy(screen = DicewarsScreen.MapPreview, spectateMode = true)
         GameAction.AcceptMap -> state.copy(screen = turnScreenFor(state.game, state.spectateMode))
         GameAction.RejectMap -> {

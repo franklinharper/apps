@@ -23,6 +23,17 @@ class GameUiReducerTest {
     }
 
     @Test
+    fun selectedPlayerCountIsUsedWhenGameStarts() {
+        val reducer = reducer()
+        val selected = reducer.reduce(initialUiState(screen = DicewarsScreen.Title), GameAction.SelectPlayerCount(4))
+        val started = reducer.reduce(selected, GameAction.StartPressed)
+
+        assertEquals(4, selected.selectedPlayerCount)
+        assertEquals(4, started.game.pmax)
+        assertEquals(DicewarsScreen.MapPreview, started.screen)
+    }
+
+    @Test
     fun mapPreviewTransitionsToHumanOrAiTurn() {
         val human = reducer().reduce(previewState(user = 0, currentPlayer = 0), GameAction.AcceptMap)
         val ai = reducer().reduce(previewState(user = 0, currentPlayer = 1), GameAction.AcceptMap)

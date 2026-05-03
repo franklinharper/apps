@@ -2,7 +2,9 @@ package com.franklinharper.dicewarsport
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,7 +61,7 @@ fun DicewarsApp(
 ) {
     when (state.screen) {
         DicewarsScreen.Loading -> LoadingScreen(onAction)
-        DicewarsScreen.Title -> TitleScreen(onAction)
+        DicewarsScreen.Title -> TitleScreen(state, onAction)
         DicewarsScreen.MapPreview -> MapPreviewScreen(state, onAction)
         DicewarsScreen.HumanTurn -> GameBoardScreen(state, onAction, title = "Your turn")
         DicewarsScreen.AiTurn -> GameBoardScreen(state, onAction, title = "AI turn")
@@ -85,19 +89,35 @@ fun routedDicewarsScreens(): Set<DicewarsScreen> = setOf(
 @Composable
 fun LoadingScreen(onAction: (GameAction) -> Unit) {
     LaunchedEffect(Unit) {
-        delay(2_000)
+        delay(500)
         onAction(GameAction.LoadingFinished)
     }
 
     ScreenScaffold("Loading") {
-        Text("Loading...")
     }
 }
 
 @Composable
-fun TitleScreen(onAction: (GameAction) -> Unit) = ScreenScaffold("Dicewars") {
+fun TitleScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold("Dicewars") {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (count in 2..8) {
+            val selected = count == state.selectedPlayerCount
+            Button(
+                onClick = { onAction(GameAction.SelectPlayerCount(count)) },
+                colors = if (selected) {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    ButtonDefaults.outlinedButtonColors()
+                },
+            ) {
+                Text("$count")
+            }
+        }
+    }
     Button(onClick = { onAction(GameAction.StartPressed) }) { Text("Start") }
-    Button(onClick = { onAction(GameAction.StartSpectate) }) { Text("Spectate") }
 }
 
 @Composable
@@ -173,17 +193,34 @@ private fun ScreenScaffold(title: String, content: ColumnScopeContent) {
     }
 }
 
-private typealias ColumnScopeContent = @Composable () -> Unit
+private typealias ColumnScopeContent = @Composable ColumnScope.() -> Unit
 
 @Composable
-private fun Board(state: GameUiState, onAction: (GameAction) -> Unit) {
+private fun ColumnScope.Board(state: GameUiState, onAction: (GameAction) -> Unit) {
     val map = remember(state.game) { state.game.toRenderMap() }
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    val density = LocalDensity.current
+
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth().weight(1f),
+        contentAlignment = Alignment.Center,
+    ) {
+        val availableWidthPx = constraints.maxWidth.toFloat()
+        val availableHeightPx = constraints.maxHeight.toFloat()
+        // Rendered hex height = cellHeight * 4/3.
+        // For regular pointy-top hexagons: hexHeight/hexWidth = sqrt(3)/2 ≈ 0.866.
+        // Using cellWidth:cellHeight = 3:2 (matching battlezone's 27:18 ratio)
+        // gives hexHeight = cellWidth * 2/3 * 4/3 = cellWidth * 8/9 ≈ 0.889 * cellWidth.
+        val cellWidthFromWidth = availableWidthPx / (HexGrid.GRID_WIDTH + 0.5f)
+        val cellWidthFromHeight = availableHeightPx / HexGrid.GRID_HEIGHT
+        val cellWidth = minOf(cellWidthFromWidth, cellWidthFromHeight)
+        val cellHeight = cellWidth * 2f / 3f
+        val fontSize = with(density) { (cellWidth * 0.8f).toSp() }.value.coerceIn(6f, 18f)
+
         MapRenderer(
             map = map,
-            cellWidth = 10f,
-            cellHeight = 7f,
-            fontSize = 8f,
+            cellWidth = cellWidth,
+            cellHeight = cellHeight,
+            fontSize = fontSize,
             highlightedTerritories = listOfNotNull(state.selectedFrom?.minus(1), state.selectedTo?.minus(1)).toSet(),
             attackFromTerritory = state.selectedFrom?.minus(1),
             onTerritoryClick = { territoryIndex -> onAction(GameAction.TerritoryClicked(territoryIndex + 1)) },

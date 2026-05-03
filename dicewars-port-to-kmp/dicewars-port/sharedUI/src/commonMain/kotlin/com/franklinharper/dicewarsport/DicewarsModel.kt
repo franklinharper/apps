@@ -136,37 +136,40 @@ class DicewarsGame {
     fun currentPlayer(): Int = turnOrder[turnIndex]
 
     fun makeMap(random: RandomSource): GameMap {
-        for (i in 0 until cellMax) {
-            val r = random.nextInt(cellMax)
+        // Correct Fisher-Yates shuffle
+        for (i in 0 until cellMax) num[i] = i
+        for (i in cellMax - 1 downTo 0) {
+            val r = random.nextInt(i + 1)
             val tmp = num[i]
             num[i] = num[r]
             num[r] = tmp
         }
+        // shuffleOrder[i] = position of value i in the shuffled array
+        val shuffleOrder = IntArray(cellMax) { i -> num.indexOf(i) }
 
         for (i in 0 until cellMax) {
             cells[i] = 0
             adjacentCells[i] = 0
         }
+        resetAreas()
 
         var areaNumber = 1
         adjacentCells[random.nextInt(cellMax)] = 1
 
-        while (true) {
-            var position = 0
-            var min = 9999
+        while (areaNumber < AREA_MAX) {
+            var seedCell = -1
+            var lowestShuffle = Int.MAX_VALUE
             for (i in 0 until cellMax) {
                 if (cells[i] > 0) continue
-                if (num[i] > min) continue
                 if (adjacentCells[i] == 0) continue
-                min = num[i]
-                position = i
+                if (shuffleOrder[i] >= lowestShuffle) continue
+                lowestShuffle = shuffleOrder[i]
+                seedCell = i
             }
-            if (min == 9999) break
+            if (seedCell == -1) break
 
-            val createdCells = percolate(position, 8, areaNumber)
-            if (createdCells == 0) break
+            growTerritory(seedCell, areaNumber, shuffleOrder)
             areaNumber++
-            if (areaNumber >= AREA_MAX) break
         }
 
         removeSingleCellSeas()
@@ -182,48 +185,45 @@ class DicewarsGame {
         return toRenderMap()
     }
 
-    private fun percolate(startPosition: Int, requestedMaxCells: Int, areaNumber: Int): Int {
-        val maxCells = if (requestedMaxCells < 3) 3 else requestedMaxCells
-        var currentPosition = startPosition
-        nextFlags.fill(0)
+    private fun growTerritory(seedCell: Int, areaNumber: Int, shuffleOrder: IntArray) {
+        val nextCells = BooleanArray(cellMax) { false }
+        var currentCell = seedCell
+        var size = 0
 
-        var count = 0
-        while (true) {
-            cells[currentPosition] = areaNumber
-            count++
+        // Phase 1: Grow to target size following a path from the current cell
+        while (size < 8) {
+            cells[currentCell] = areaNumber
+            size++
 
-            for (direction in 0 until 6) {
-                val position = cellNeighbors[currentPosition].directions[direction]
-                if (position < 0) continue
-                nextFlags[position] = 1
+            val neighbors = cellNeighbors[currentCell].directions
+            for (neighbor in neighbors) {
+                if (neighbor >= 0) nextCells[neighbor] = true
             }
 
-            var min = 9999
-            for (i in 0 until cellMax) {
-                if (nextFlags[i] == 0) continue
-                if (cells[i] > 0) continue
-                if (num[i] > min) continue
-                min = num[i]
-                currentPosition = i
+            var nextCell = -1
+            var lowestShuffle = Int.MAX_VALUE
+            for (neighbor in neighbors) {
+                if (neighbor >= 0 && cells[neighbor] == 0 && shuffleOrder[neighbor] < lowestShuffle) {
+                    nextCell = neighbor
+                    lowestShuffle = shuffleOrder[neighbor]
+                }
             }
-            if (min == 9999) break
-            if (count >= maxCells) break
+
+            if (nextCell == -1) break
+            currentCell = nextCell
         }
 
+        // Phase 2: Add all remaining adjacent unassigned cells
         for (i in 0 until cellMax) {
-            if (nextFlags[i] == 0) continue
+            if (!nextCells[i]) continue
             if (cells[i] > 0) continue
             cells[i] = areaNumber
-            count++
 
-            for (direction in 0 until 6) {
-                val position = cellNeighbors[i].directions[direction]
-                if (position < 0) continue
-                adjacentCells[position] = 1
+            val neighbors = cellNeighbors[i].directions
+            for (neighbor in neighbors) {
+                if (neighbor >= 0) adjacentCells[neighbor] = 1
             }
         }
-
-        return count
     }
 
     private fun removeSingleCellSeas() {
