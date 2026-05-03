@@ -17,7 +17,7 @@ Progress status values:
 | 0B - Baseline verification and tracking setup | Done | Added `DicewarsScreenContractTest.portHasSameNumberOfScreensAsOriginal`; `./gradlew :sharedUI:jvmTest --rerun-tasks` fails at compile with unresolved `DicewarsScreen` | Baseline commands/results recorded; generated source-set paths documented; `gradlew` executable bit restored | `./gradlew test` failed: generated `ComposeTest.simpleCheck` NPE in debug/release unit tests; `./gradlew :androidApp:assembleDebug` succeeded; `./gradlew :desktopApp:run` compiled/launched then timed out because app stayed open; `./gradlew :webApp:wasmJsBrowserDevelopmentRun` compiled and served at localhost:8080 then timed out because dev server stayed open | Source paths: common app code in `sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/`; common tests in `sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/`; platform entry points in `androidApp`, `desktopApp`, `webApp`, and `sharedUI/src/iosMain`. `local.properties` has empty `sdk.dir` warning. No implementation-plan path correction needed. |
 | 1 - Screen-count contract | Done | Reused red test from Phase 0B: `DicewarsScreenContractTest.portHasSameNumberOfScreensAsOriginal` failed with unresolved `DicewarsScreen` | Added `DicewarsScreen` enum with exactly 10 entries in commonMain | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Screen states: Loading, Title, MapPreview, HumanTurn, AiTurn, Battle, Supply, GameOver, Win, History |
 | 2 - Pure game model | Done | Added `DicewarsGameModelTest`; first run failed with unresolved `DicewarsGame` | Added common pure model types: `AreaData`, `PlayerData`, `CellNeighbors`, `HistoryData`, `DicewarsGame`, and `RandomSource` | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Ported JS constants/defaults and `next_cel` as `nextCell`; corrected expected odd-row neighbor values during red/green cycle |
-| 3 - Map generation | Not Started | Pending | Pending | Pending | Source: `make_map`, `percolate`, `set_area_line` |
+| 3 - Map generation | Done | Added `DicewarsMapGenerationTest`; first run failed with unresolved `makeMap`, `GameMap`, and `toRenderMap` | Ported `make_map`, `percolate`, and `set_area_line`; added renderer-compatible `GameMap`/`Territory` and adapter | `./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain` passed | Adapter locks indexing: `GameMap.cells[cellIndex]` preserves JS area IDs (`1..31`), and `territories[areaId - 1]` stores that area. Used injected `RandomSource`; owner selection uses `nextInt(count)` for deterministic valid selection. |
 | 4 - Map renderer adaptation | Not Started | Pending | Pending | Pending | Reuse battlezone `MapRenderer.kt` and `TerritoryDrawer.kt` |
 | 5 - Rules | Not Started | Pending | Pending | Pending | Legal attack, battle, supply, turn, history |
 | 6 - AI | Not Started | Pending | Pending | Pending | Source: `ai_example`, `ai_default`, `ai_defensive` |
@@ -147,3 +147,41 @@ Implemented JS-derived constants/defaults and `next_cel` as `nextCell`. Included
 ```
 
 Result: passed after correcting test expectations for odd-row hex neighbors to match the JS algorithm.
+
+### 2026-05-03 - Phase 3
+
+Added map generation tests:
+
+```text
+sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/DicewarsMapGenerationTest.kt
+```
+
+Initial red run:
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: failed at compile time with unresolved `makeMap`, `GameMap`, `Territory`, and `toRenderMap`, as expected.
+
+Implemented JS-derived map generation in:
+
+```text
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/DicewarsModel.kt
+```
+
+Ported/adapted:
+
+- `make_map()` -> `DicewarsGame.makeMap(random: RandomSource): GameMap`
+- `percolate()`
+- `set_area_line()`
+- renderer-compatible `GameMap` and `Territory`
+- `DicewarsGame.toRenderMap()` adapter
+
+Indexing decision: `GameMap.cells[cellIndex]` preserves the JS area ID (`1..31` for active territories, `0` for empty/sea). The renderer territory list is zero-based, so area `N` maps to `territories[N - 1]`. Tests lock this down.
+
+```bash
+./gradlew :sharedUI:jvmTest --rerun-tasks --console=plain
+```
+
+Result: passed.
