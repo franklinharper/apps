@@ -14,6 +14,9 @@ repositories {
 
 dependencies {
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
+    if (!file("kmp-web-wizard/src/commonMain/kotlin").exists()) {
+        implementation(files("dist/kmp-app-generator-all.jar"))
+    }
     testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13.2")
 }
