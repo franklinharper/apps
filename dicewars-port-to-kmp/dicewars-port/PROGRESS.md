@@ -11,6 +11,8 @@ Progress status values:
 
 ## Phase Table
 
+Tournament mode is tracked separately in `TOURNAMENT_PLAN.md` and `TOURNAMENT_PROGRESS.md`.
+
 | Phase | Status | Red test evidence | Green implementation evidence | Commands/results | Notes/blockers |
 |---|---|---|---|---|---|
 | 0A - Bootstrap and plan | Done | N/A | New app generated; plan and progress docs written | `kmp-app-generator --name=dicewars-port --id=com.franklinharper.dicewarsport --android --ios --desktop --web --tests dicewars-port` succeeded; generated 91 files | Created `IMPLEMENTATION_PLAN.md` and `PROGRESS.md` |
@@ -377,6 +379,50 @@ Implemented:
 ```
 
 Result: passed.
+
+### 2026-05-04 - Tournament planning
+
+Added tournament documentation:
+
+```text
+TOURNAMENT_PLAN.md
+TOURNAMENT_PROGRESS.md
+```
+
+Result: documentation-only update. Tournament mode will be tracked in `TOURNAMENT_PROGRESS.md`.
+
+### 2026-05-04 - Tournament implementation
+
+Implemented bot-only tournament v1. Details are tracked in `TOURNAMENT_PROGRESS.md`.
+
+Added:
+
+```text
+sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/tournament/
+sharedUI/src/commonTest/kotlin/com/franklinharper/dicewarsport/tournament/
+tournamentCli/
+scripts/run-tournament
+dist/tournament-cli/
+```
+
+Validation summary:
+
+```bash
+./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain
+./gradlew test --console=plain
+./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 3 --seed 1 --format text --max-actions 1000" --console=plain
+./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 3 --seed 1 --format csv --max-actions 1000" --console=plain
+./scripts/run-tournament --bots default,defensive,example --rounds 1 --seed 1 --format text --max-actions 1000
+./scripts/run-tournament --bots default,defensive,example --rounds 3 --seed 1 --format csv --max-actions 1000 --out build/tmp/tournament-report.csv
+```
+
+Result: passed. Wrapper rebuild skipping validated: first wrapper run rebuilt; second wrapper run reused existing build. Full `./gradlew test` also passed with existing SDK/deprecation/problem-report warnings.
+
+Tournament seed reporting update: when `--seed` is omitted, the tournament now generates and reports an effective seed. Plain text reports show `Seed: <value>`, and CSV reports include a `tournament_seed` column. `./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain` and `./gradlew test --console=plain` passed after this update.
+
+Failed-round repro/replay update: tournament rounds now use derived per-round seeds. Failed-round reports include round seed, seated bot IDs, max actions, action-log count when present, and a copyable `./scripts/replay-round ...` command. Added optional `--log-failed-rounds`/`--log-all-rounds`, `BotRoundStepper`, replay CLI support, and `scripts/replay-round`. Red/green evidence is recorded in `TOURNAMENT_PROGRESS.md`. Validation passed with `./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain` and `./gradlew test --console=plain`.
+
+Replay UX planning update: `TOURNAMENT_PLAN.md` now records the next replay changes: replace `--steps` with `--last-steps`, replay to terminal state and print final entries, remove `--until-failed`/`--until-complete`, label terminal output as `End:`, add a pasteable `ROUND_REPLAY_SPEC`, and support future GUI Run To End plus back/forward 1/10/100 navigation using a replay timeline.
 
 ### 2026-05-03 - Phase 9
 
