@@ -157,20 +157,33 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
         modifier = Modifier.fillMaxWidth(),
     )
     PlayerStatusBar(state.game)
-    if (state.screen == DicewarsScreen.HumanTurn) {
-        Text(
-            text = "1. Click your area. 2. Click neighbor to attack.",
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Button(onClick = { onAction(GameAction.EndTurn) }) { Text("End turn") }
-    } else {
-        LaunchedEffect(state.game) {
-            delay(300)
-            onAction(GameAction.AiStep)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (state.screen == DicewarsScreen.HumanTurn) {
+            Text(
+                text = "1. Click your area. 2. Click neighbor to attack.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        } else {
+            LaunchedEffect(state.game) {
+                delay(300)
+                onAction(GameAction.AiStep)
+            }
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(GameColors.getPlayerColor(state.game.currentPlayer())),
+            )
+            Spacer(Modifier.size(8.dp))
+            Text("bot's turn")
         }
-        Text("AI is playing…")
+    }
+    if (state.screen == DicewarsScreen.HumanTurn) {
+        Button(onClick = { onAction(GameAction.EndTurn) }) { Text("End turn") }
     }
 }
 
@@ -226,7 +239,7 @@ private fun PlayerStatusBar(game: DicewarsGame) {
                     )
                     Text(
                         text = "${game.players[player].maxConnectedAreaCount}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = if (isCurrentPlayer) {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         } else {
@@ -235,7 +248,7 @@ private fun PlayerStatusBar(game: DicewarsGame) {
                     )
                 }
                 Text(
-                    text = if (game.players[player].stock > 0) "+${game.players[player].stock}" else "",
+                    text = if (game.players[player].stock > 0) "${game.players[player].stock}" else "",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isCurrentPlayer) {
                         MaterialTheme.colorScheme.onPrimaryContainer
