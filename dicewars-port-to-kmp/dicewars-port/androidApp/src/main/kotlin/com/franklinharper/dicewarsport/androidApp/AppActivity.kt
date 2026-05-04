@@ -21,10 +21,12 @@ class AppActivity : ComponentActivity() {
         enableEdgeToEdge()
         val player = AndroidSoundPlayer(this)
         soundPlayer = player
+        val debugPrefs = AndroidDebugPreferences(this)
         setContent {
             App(
                 onThemeChanged = { ThemeChanged(it) },
                 soundPlayer = player,
+                debugPreferences = debugPrefs,
             )
         }
     }

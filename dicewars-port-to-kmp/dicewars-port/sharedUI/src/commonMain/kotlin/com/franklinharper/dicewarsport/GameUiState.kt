@@ -8,6 +8,9 @@ data class GameUiState(
     val spectateMode: Boolean = false,
     val selectedPlayerCount: Int = game.pmax,
     val soundEnabled: Boolean = true,
+    val debugMode: Boolean = false,
+    val titleTapCount: Int = 0,
+    val titleTapTimestamp: Long = 0L,
 )
 
 sealed interface GameAction {
@@ -22,19 +25,31 @@ sealed interface GameAction {
     data object BackToTitle : GameAction
     data object StartSpectate : GameAction
     data object ToggleSound : GameAction
+    data object TitleTapped : GameAction
+    data object GoToDebug : GameAction
+    data class ShowDebugScreen(val screen: DicewarsScreen) : GameAction
+    data object DisableDebugMode : GameAction
 }
 
 class GameReducer(
     private val random: RandomSource,
     private val aiStrategies: Map<Int, AiStrategy> = emptyMap(),
+    private val debugPreferences: DebugPreferences = NoOpDebugPreferences(),
 ) {
+    companion object {
+        private const val TAP_THRESHOLD = 5
+        private const val TAP_WINDOW_MS = 3000L
+    }
     data class Result(
         val state: GameUiState,
         val soundEvents: List<SoundEvent> = emptyList(),
     )
 
     fun reduce(state: GameUiState, action: GameAction): Result = when (action) {
-        GameAction.LoadingFinished -> Result(state.copy(screen = DicewarsScreen.Title))
+        GameAction.LoadingFinished -> {
+            val debugMode = debugPreferences.isDebugMode()
+            Result(state.copy(screen = DicewarsScreen.Title, debugMode = debugMode))
+        }
         is GameAction.SelectPlayerCount -> Result(
             state.copy(selectedPlayerCount = action.count),
             listOf(SoundEvent.BUTTON),
@@ -62,6 +77,13 @@ class GameReducer(
         GameAction.AiStep -> onAiStep(state)
         GameAction.BackToTitle -> Result(state.copy(screen = DicewarsScreen.Title, selectedFrom = null, selectedTo = null))
         GameAction.ToggleSound -> Result(state.copy(soundEnabled = !state.soundEnabled))
+        GameAction.TitleTapped -> onTitleTapped(state)
+        GameAction.GoToDebug -> Result(state.copy(screen = DicewarsScreen.Debug))
+        is GameAction.ShowDebugScreen -> onShowDebugScreen(state, action.screen)
+        GameAction.DisableDebugMode -> {
+            debugPreferences.setDebugMode(false)
+            Result(state.copy(debugMode = false, screen = DicewarsScreen.Title))
+        }
     }
 
     private fun onTerritoryClicked(state: GameUiState, territoryId: Int): Result {
@@ -182,4 +204,29 @@ class GameReducer(
 
     private fun turnScreenFor(game: DicewarsGame, spectateMode: Boolean): DicewarsScreen =
         if (!spectateMode && game.currentPlayer() == game.user) DicewarsScreen.HumanTurn else DicewarsScreen.AiTurn
+
+    private fun onTitleTapped(state: GameUiState): Result {
+        val now = System.currentTimeMillis()
+        val withinWindow = (now - state.titleTapTimestamp) < TAP_WINDOW_MS
+        val newCount = if (withinWindow) state.titleTapCount + 1 else 1
+        val newDebugMode = if (newCount >= TAP_THRESHOLD) !state.debugMode else state.debugMode
+        if (newDebugMode != state.debugMode) {
+            debugPreferences.setDebugMode(newDebugMode)
+        }
+        return Result(
+            state.copy(
+                debugMode = newDebugMode,
+                titleTapCount = if (newDebugMode != state.debugMode) 0 else newCount,
+                titleTapTimestamp = if (newDebugMode != state.debugMode) 0L else now,
+            ),
+        )
+    }
+
+    private fun onShowDebugScreen(state: GameUiState, targetScreen: DicewarsScreen): Result {
+        val needsGame = targetScreen in setOf(
+            DicewarsScreen.HumanTurn, DicewarsScreen.AiTurn,
+        )
+        val game = if (needsGame) DicewarsGame.generate(state.selectedPlayerCount, random) else state.game
+        return Result(state.copy(screen = targetScreen, game = game, selectedFrom = null, selectedTo = null))
+    }
 }

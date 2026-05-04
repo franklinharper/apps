@@ -7,5 +7,6 @@ enum class DicewarsScreen {
     HumanTurn,
     AiTurn,
     GameOver,
-    Win
+    Win,
+    Debug,
 }

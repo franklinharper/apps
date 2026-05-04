@@ -124,6 +124,47 @@ class GameUiReducerTest {
         assertTrue(result.state.spectateMode)
         assertEquals(DicewarsScreen.MapPreview, result.state.screen)
     }
+
+    @Test
+    fun debugModeCanBeToggledViaTitleTaps() {
+        val reducer = reducer()
+        var state = initialUiState(screen = DicewarsScreen.Title)
+        // Tap 4 times - not enough
+        repeat(4) { state = reducer.reduce(state, GameAction.TitleTapped).state }
+        assertEquals(false, state.debugMode)
+        // 5th tap enables debug mode
+        state = reducer.reduce(state, GameAction.TitleTapped).state
+        assertEquals(true, state.debugMode)
+    }
+
+    @Test
+    fun debugModeCanBeDisabled() {
+        val reducer = reducer()
+        var state = initialUiState(screen = DicewarsScreen.Title).copy(debugMode = true)
+        state = reducer.reduce(state, GameAction.DisableDebugMode).state
+        assertEquals(false, state.debugMode)
+        assertEquals(DicewarsScreen.Title, state.screen)
+    }
+
+    @Test
+    fun showDebugScreenNavigatesToWinScreen() {
+        val result = reducer().reduce(
+            initialUiState(screen = DicewarsScreen.Debug),
+            GameAction.ShowDebugScreen(DicewarsScreen.Win),
+        )
+        assertEquals(DicewarsScreen.Win, result.state.screen)
+    }
+
+    @Test
+    fun showDebugScreenGeneratesGameForHumanTurn() {
+        val result = reducer().reduce(
+            initialUiState(screen = DicewarsScreen.Debug),
+            GameAction.ShowDebugScreen(DicewarsScreen.HumanTurn),
+        )
+        assertEquals(DicewarsScreen.HumanTurn, result.state.screen)
+        // Game should have been generated (non-default areas exist)
+        assertTrue(result.state.game.areas.any { it.size > 0 })
+    }
 }
 
 private fun adj(vararg ids: Int): List<Int> {
@@ -135,6 +176,11 @@ private fun adj(vararg ids: Int): List<Int> {
 private fun reducer(ai: AiStrategy = FixedMoveAi(null)): GameReducer = GameReducer(
     random = UiFixedRandom(),
     aiStrategies = mapOf(1 to ai),
+    debugPreferences = object : DebugPreferences {
+        private var mode = false
+        override fun isDebugMode(): Boolean = mode
+        override fun setDebugMode(enabled: Boolean) { mode = enabled }
+    },
 )
 
 private fun initialUiState(screen: DicewarsScreen = DicewarsScreen.Loading): GameUiState = GameUiState(
