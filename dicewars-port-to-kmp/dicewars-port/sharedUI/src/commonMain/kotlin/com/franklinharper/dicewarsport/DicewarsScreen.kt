@@ -1,12 +1,12 @@
 package com.franklinharper.dicewarsport
 
-enum class DicewarsScreen {
+enum class DicewarsScreen(val soundEvents: List<SoundEvent> = emptyList()) {
     Loading,
     Title,
     MapPreview,
-    HumanTurn,
+    HumanTurn(soundEvents = listOf(SoundEvent.MY_TURN)),
     AiTurn,
-    GameOver,
-    Win,
+    GameOver(soundEvents = listOf(SoundEvent.GAME_OVER)),
+    Win(soundEvents = listOf(SoundEvent.WIN)),
     Debug,
 }

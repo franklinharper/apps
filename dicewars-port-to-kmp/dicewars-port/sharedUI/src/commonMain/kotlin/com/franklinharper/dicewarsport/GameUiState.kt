@@ -64,9 +64,7 @@ class GameReducer(
         }
         GameAction.AcceptMap -> {
             val newScreen = turnScreenFor(state.game, state.spectateMode)
-            val sounds = mutableListOf<SoundEvent>()
-            if (newScreen == DicewarsScreen.HumanTurn) sounds.add(SoundEvent.MY_TURN)
-            Result(state.copy(screen = newScreen), sounds)
+            Result(state.copy(screen = newScreen), newScreen.soundEvents)
         }
         GameAction.RejectMap -> {
             val newGame = DicewarsGame.generate(state.game.pmax, random)
@@ -113,7 +111,7 @@ class GameReducer(
 
         val terminalScreen = terminalScreenOrNull(newGame, state.spectateMode)
         if (terminalScreen != null) {
-            val terminalSounds = battleSounds + terminalScreenSound(terminalScreen)
+            val terminalSounds = battleSounds + terminalScreen.soundEvents
             return Result(
                 state.copy(game = newGame, screen = terminalScreen, selectedFrom = null, selectedTo = null),
                 terminalSounds,
@@ -149,7 +147,7 @@ class GameReducer(
 
         val terminalScreen = terminalScreenOrNull(newGame, state.spectateMode)
         if (terminalScreen != null) {
-            val terminalSounds = battleSounds + terminalScreenSound(terminalScreen)
+            val terminalSounds = battleSounds + terminalScreen.soundEvents
             return Result(
                 state.copy(game = newGame, screen = terminalScreen, selectedFrom = null, selectedTo = null),
                 terminalSounds,
@@ -177,8 +175,6 @@ class GameReducer(
         }
         game = game.nextPlayer()
         val newScreen = turnScreenFor(game, state.spectateMode)
-        val sounds = mutableListOf<SoundEvent>()
-        if (newScreen == DicewarsScreen.HumanTurn) sounds.add(SoundEvent.MY_TURN)
         return Result(
             state.copy(
                 game = game,
@@ -186,7 +182,7 @@ class GameReducer(
                 selectedFrom = null,
                 selectedTo = null,
             ),
-            sounds,
+            newScreen.soundEvents,
         )
     }
 
@@ -195,11 +191,6 @@ class GameReducer(
         val activePlayers = (0 until game.pmax).count { game.players[it].maxConnectedAreaCount > 0 }
         if (activePlayers == 1) return if (spectateMode) DicewarsScreen.GameOver else DicewarsScreen.Win
         return null
-    }
-
-    private fun terminalScreenSound(screen: DicewarsScreen): SoundEvent = when (screen) {
-        DicewarsScreen.Win -> SoundEvent.WIN
-        else -> SoundEvent.GAME_OVER
     }
 
     private fun turnScreenFor(game: DicewarsGame, spectateMode: Boolean): DicewarsScreen =
@@ -227,12 +218,9 @@ class GameReducer(
             DicewarsScreen.HumanTurn, DicewarsScreen.AiTurn,
         )
         val game = if (needsGame) DicewarsGame.generate(state.selectedPlayerCount, random) else state.game
-        val sounds = when (targetScreen) {
-            DicewarsScreen.Win -> listOf(SoundEvent.WIN)
-            DicewarsScreen.GameOver -> listOf(SoundEvent.GAME_OVER)
-            DicewarsScreen.HumanTurn -> listOf(SoundEvent.MY_TURN)
-            else -> emptyList()
-        }
-        return Result(state.copy(screen = targetScreen, game = game, selectedFrom = null, selectedTo = null), sounds)
+        return Result(
+            state.copy(screen = targetScreen, game = game, selectedFrom = null, selectedTo = null),
+            targetScreen.soundEvents,
+        )
     }
 }
