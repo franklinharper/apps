@@ -245,7 +245,7 @@ fun GameOverScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenS
     onToggleSound = { onAction(GameAction.ToggleSound) },
     onGoToDebug = { onAction(GameAction.GoToDebug) },
 ) {
-    Spacer(Modifier.weight(1f))
+    AnimatedRobot(modifier = Modifier.weight(1f).fillMaxWidth())
     Button(
         onClick = { onAction(GameAction.BackToTitle) },
         modifier = Modifier.fillMaxWidth(),
@@ -306,6 +306,310 @@ fun DebugScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaf
                 contentColor = MaterialTheme.colorScheme.onError,
             ),
         ) { Text("Disable Debug Mode") }
+    }
+}
+
+@Composable
+private fun AnimatedRobot(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "robot")
+
+    // Jump bounce
+    val jumpOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "jumpOffset",
+    )
+
+    // Left arm wave
+    val leftArmAngle by infiniteTransition.animateFloat(
+        initialValue = -20f,
+        targetValue = -70f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "leftArm",
+    )
+
+    // Right arm wave (offset phase)
+    val rightArmAngle by infiniteTransition.animateFloat(
+        initialValue = 20f,
+        targetValue = 70f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "rightArm",
+    )
+
+    // Antenna bob
+    val antennaBob by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "antennaBob",
+    )
+
+    // Eye blink
+    val blink by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(100, delayMillis = 2500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "blink",
+    )
+
+    // Entrance
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+    val entranceScale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(500),
+        label = "entrance",
+    )
+
+    val bodyColor = Color(0xFF78909C)
+    val bodyDark = Color(0xFF546E7A)
+    val headColor = Color(0xFF90A4AE)
+    val accentColor = Color(0xFF42A5F5)
+    val eyeColor = Color(0xFF1769AA)
+    val cheekColor = Color(0xFFEF9A9A)
+    val antennaColor = Color(0xFFFF7043)
+
+    Canvas(
+        modifier = modifier.scale(entranceScale),
+    ) {
+        val w = size.width
+        val h = size.height
+        val cx = w / 2f
+        val scale = minOf(w, h) / 300f
+
+        // Scale helper
+        fun s(v: Float) = v * scale
+        fun s(v: Int) = v * scale
+
+        // Ground shadow (scales with jump)
+        val shadowScale = 1f + (jumpOffset / 80f)
+        drawOval(
+            color = Color(0x22000000),
+            topLeft = Offset(cx - s(70) * shadowScale, h * 0.88f),
+            size = androidx.compose.ui.geometry.Size(s(140) * shadowScale, s(16)),
+        )
+
+        val jumpPx = jumpOffset * scale
+        val bodyTop = h * 0.42f + s(10) + jumpPx
+        val bodyLeft = cx - s(55)
+        val bodyW = s(110)
+        val bodyH = s(100)
+
+        // Legs
+        drawRoundRect(
+            color = bodyDark,
+            topLeft = Offset(cx - s(30), bodyTop + bodyH),
+            size = androidx.compose.ui.geometry.Size(s(22), s(40)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
+        )
+        drawRoundRect(
+            color = bodyDark,
+            topLeft = Offset(cx + s(8), bodyTop + bodyH),
+            size = androidx.compose.ui.geometry.Size(s(22), s(40)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
+        )
+
+        // Feet
+        drawRoundRect(
+            color = Color(0xFF455A64),
+            topLeft = Offset(cx - s(38), bodyTop + bodyH + s(28)),
+            size = androidx.compose.ui.geometry.Size(s(35), s(14)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(6)),
+        )
+        drawRoundRect(
+            color = Color(0xFF455A64),
+            topLeft = Offset(cx + s(3), bodyTop + bodyH + s(28)),
+            size = androidx.compose.ui.geometry.Size(s(35), s(14)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(6)),
+        )
+
+        // Body
+        drawRoundRect(
+            color = bodyColor,
+            topLeft = Offset(bodyLeft, bodyTop),
+            size = androidx.compose.ui.geometry.Size(bodyW, bodyH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(16)),
+        )
+        // Body panel
+        drawRoundRect(
+            color = bodyDark,
+            topLeft = Offset(cx - s(20), bodyTop + s(20)),
+            size = androidx.compose.ui.geometry.Size(s(40), s(30)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
+        )
+        // Panel light (blinking heart)
+        val heartAlpha = 0.5f + 0.5f * kotlin.math.sin(System.currentTimeMillis() / 300.0).toFloat()
+        drawCircle(
+            color = accentColor.copy(alpha = heartAlpha),
+            radius = s(8),
+            center = Offset(cx, bodyTop + s(35)),
+        )
+        // Panel dots
+        drawCircle(
+            color = Color(0xFF66BB6A),
+            radius = s(4),
+            center = Offset(cx - s(10), bodyTop + s(25)),
+        )
+        drawCircle(
+            color = Color(0xFFFFA726),
+            radius = s(4),
+            center = Offset(cx + s(10), bodyTop + s(25)),
+        )
+
+        // Left arm (waves)
+        val leftArmPivotX = bodyLeft
+        val leftArmPivotY = bodyTop + s(15)
+        rotate(leftArmAngle, Offset(leftArmPivotX, leftArmPivotY)) {
+            drawRoundRect(
+                color = bodyDark,
+                topLeft = Offset(leftArmPivotX - s(15), leftArmPivotY),
+                size = androidx.compose.ui.geometry.Size(s(18), s(55)),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
+            )
+            // Hand
+            drawCircle(
+                color = headColor,
+                radius = s(10),
+                center = Offset(leftArmPivotX - s(6), leftArmPivotY + s(58)),
+            )
+        }
+
+        // Right arm (waves)
+        val rightArmPivotX = bodyLeft + bodyW
+        val rightArmPivotY = bodyTop + s(15)
+        rotate(rightArmAngle, Offset(rightArmPivotX, rightArmPivotY)) {
+            drawRoundRect(
+                color = bodyDark,
+                topLeft = Offset(rightArmPivotX - s(3), rightArmPivotY),
+                size = androidx.compose.ui.geometry.Size(s(18), s(55)),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
+            )
+            // Hand
+            drawCircle(
+                color = headColor,
+                radius = s(10),
+                center = Offset(rightArmPivotX + s(6), rightArmPivotY + s(58)),
+            )
+        }
+
+        // Neck
+        drawRoundRect(
+            color = bodyDark,
+            topLeft = Offset(cx - s(12), bodyTop - s(12)),
+            size = androidx.compose.ui.geometry.Size(s(24), s(18)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(6)),
+        )
+
+        // Head
+        val headCenterY = bodyTop - s(55)
+        drawRoundRect(
+            color = headColor,
+            topLeft = Offset(cx - s(50), headCenterY - s(40)),
+            size = androidx.compose.ui.geometry.Size(s(100), s(80)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(20)),
+        )
+
+        // Face plate
+        drawRoundRect(
+            color = Color(0xFFECEFF1),
+            topLeft = Offset(cx - s(40), headCenterY - s(28)),
+            size = androidx.compose.ui.geometry.Size(s(80), s(52)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(14)),
+        )
+
+        // Eyes
+        val eyeY = headCenterY - s(8)
+        val leftEyeX = cx - s(18)
+        val rightEyeX = cx + s(18)
+        // Eye whites
+        drawCircle(color = Color.White, radius = s(12), center = Offset(leftEyeX, eyeY))
+        drawCircle(color = Color.White, radius = s(12), center = Offset(rightEyeX, eyeY))
+        // Pupils
+        drawOval(
+            color = eyeColor,
+            topLeft = Offset(leftEyeX - s(6), eyeY - s(8 * blink)),
+            size = androidx.compose.ui.geometry.Size(s(12), s(16 * blink)),
+        )
+        drawOval(
+            color = eyeColor,
+            topLeft = Offset(rightEyeX - s(6), eyeY - s(8 * blink)),
+            size = androidx.compose.ui.geometry.Size(s(12), s(16 * blink)),
+        )
+        // Eye shine
+        drawCircle(color = Color.White, radius = s(3), center = Offset(leftEyeX + s(3), eyeY - s(3)))
+        drawCircle(color = Color.White, radius = s(3), center = Offset(rightEyeX + s(3), eyeY - s(3)))
+
+        // Smile
+        val smilePath = Path().apply {
+            moveTo(cx - s(16), headCenterY + s(12))
+            quadraticBezierTo(cx, headCenterY + s(22), cx + s(16), headCenterY + s(12))
+        }
+        drawPath(
+            path = smilePath,
+            color = eyeColor,
+            style = Stroke(width = s(4), cap = StrokeCap.Round),
+        )
+
+        // Cheeks
+        drawCircle(
+            color = cheekColor.copy(alpha = 0.5f),
+            radius = s(8),
+            center = Offset(cx - s(32), headCenterY + s(6)),
+        )
+        drawCircle(
+            color = cheekColor.copy(alpha = 0.5f),
+            radius = s(8),
+            center = Offset(cx + s(32), headCenterY + s(6)),
+        )
+
+        // Ears
+        drawCircle(
+            color = bodyColor,
+            radius = s(12),
+            center = Offset(cx - s(50), headCenterY - s(5)),
+        )
+        drawCircle(
+            color = bodyColor,
+            radius = s(12),
+            center = Offset(cx + s(50), headCenterY - s(5)),
+        )
+
+        // Antenna stem
+        drawLine(
+            color = bodyDark,
+            start = Offset(cx, headCenterY - s(40)),
+            end = Offset(cx, headCenterY - s(60) + antennaBob),
+            strokeWidth = s(5),
+            cap = StrokeCap.Round,
+        )
+        // Antenna ball
+        drawCircle(
+            color = antennaColor,
+            radius = s(10),
+            center = Offset(cx, headCenterY - s(65) + antennaBob),
+        )
+        // Antenna glow
+        drawCircle(
+            color = antennaColor.copy(alpha = 0.3f),
+            radius = s(16),
+            center = Offset(cx, headCenterY - s(65) + antennaBob),
+        )
     }
 }
 
