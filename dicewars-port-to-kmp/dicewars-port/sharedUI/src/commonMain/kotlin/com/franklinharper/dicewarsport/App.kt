@@ -201,7 +201,7 @@ private fun PlayerStatusBar(game: DicewarsGame) {
     ) {
         for (player in game.turnOrder.take(game.pmax)) {
             val isCurrentPlayer = player == game.currentPlayer()
-            Row(
+            Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(
@@ -212,23 +212,37 @@ private fun PlayerStatusBar(game: DicewarsGame) {
                         },
                     )
                     .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(GameColors.getPlayerColor(player)),
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(GameColors.getPlayerColor(player)),
+                    )
+                    Text(
+                        text = "${game.players[player].maxConnectedAreaCount}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isCurrentPlayer) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onBackground
+                        },
+                    )
+                }
                 Text(
-                    text = "${game.players[player].maxConnectedAreaCount}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = if (game.players[player].stock > 0) "+${game.players[player].stock}" else "",
+                    style = MaterialTheme.typography.bodySmall,
                     color = if (isCurrentPlayer) {
                         MaterialTheme.colorScheme.onPrimaryContainer
                     } else {
                         MaterialTheme.colorScheme.onBackground
                     },
+                    minLines = 1,
                 )
             }
         }
