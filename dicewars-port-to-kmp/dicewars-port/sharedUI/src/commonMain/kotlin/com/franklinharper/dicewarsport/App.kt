@@ -406,16 +406,17 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
         fun s(v: Int) = v * sc
 
         val bodyTop = h * 0.42f + s(10)
-        val bodyLeft = cx - s(55)
-        val bodyW = s(110)
+        val bodyLeft = cx - s(60)
+        val bodyW = s(120)
         val bodyH = s(100)
+        val shoulderWidth = s(20) // how far arms extend beyond body edge
 
         // --- Stars (drawn behind robot so they appear to emerge from fist) ---
         // Compute fist position first to know where stars originate
-        val rightArmPivotX = bodyLeft + bodyW
+        val rightArmPivotX = bodyLeft + bodyW + shoulderWidth
         val rightArmPivotY = bodyTop + s(15)
         // Fist is at end of arm rotated by fistPumpAngle
-        val armLen = s(55)
+        val armLen = s(60)
         val fistAngleRad = (fistPumpAngle - 90f) * (Math.PI / 180f).toFloat() // -90 so 0 = pointing right
         // Actually the arm rotates around pivot, so fist position:
         val fistDirRad = fistPumpAngle * (Math.PI / 180f).toFloat()
@@ -461,20 +462,29 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
 
         // --- Robot body ---
 
-        // Left arm (down by side, relaxed)
-        val leftArmPivotX = bodyLeft
+        // Left arm (down by side, sticks out from shoulder)
+        val leftArmPivotX = bodyLeft - shoulderWidth
         val leftArmPivotY = bodyTop + s(15)
-        rotate(-10f, Offset(leftArmPivotX, leftArmPivotY)) {
+        rotate(-15f, Offset(leftArmPivotX, leftArmPivotY)) {
+            // Upper arm (horizontal from shoulder outward)
             drawRoundRect(
                 color = bodyDark,
-                topLeft = Offset(leftArmPivotX - s(15), leftArmPivotY),
-                size = androidx.compose.ui.geometry.Size(s(18), s(55)),
+                topLeft = Offset(leftArmPivotX - s(20), leftArmPivotY),
+                size = androidx.compose.ui.geometry.Size(s(20), s(18)),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
             )
+            // Forearm (hangs down)
+            drawRoundRect(
+                color = bodyDark,
+                topLeft = Offset(leftArmPivotX - s(38), leftArmPivotY + s(8)),
+                size = androidx.compose.ui.geometry.Size(s(20), s(45)),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
+            )
+            // Hand
             drawCircle(
                 color = headColor,
                 radius = s(10),
-                center = Offset(leftArmPivotX - s(6), leftArmPivotY + s(58)),
+                center = Offset(leftArmPivotX - s(28), leftArmPivotY + s(55)),
             )
         }
 
@@ -530,32 +540,46 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
         drawCircle(color = Color(0xFF66BB6A), radius = s(4), center = Offset(cx - s(10), bodyTop + s(25)))
         drawCircle(color = Color(0xFFFFA726), radius = s(4), center = Offset(cx + s(10), bodyTop + s(25)))
 
+        // Shoulder connectors (visual bridge from body to arms)
+        drawRoundRect(
+            color = bodyColor,
+            topLeft = Offset(bodyLeft, bodyTop + s(8)),
+            size = androidx.compose.ui.geometry.Size(s(15), s(20)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(6)),
+        )
+        drawRoundRect(
+            color = bodyColor,
+            topLeft = Offset(bodyLeft + bodyW - s(15), bodyTop + s(8)),
+            size = androidx.compose.ui.geometry.Size(s(15) + shoulderWidth, s(20)),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(6)),
+        )
+
         // Right arm (raised fist!)
         rotate(fistPumpAngle, Offset(rightArmPivotX, rightArmPivotY)) {
             drawRoundRect(
                 color = bodyDark,
-                topLeft = Offset(rightArmPivotX - s(3), rightArmPivotY - armLen),
+                topLeft = Offset(rightArmPivotX - s(9), rightArmPivotY - armLen),
                 size = androidx.compose.ui.geometry.Size(s(18), armLen),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
             )
             // Clenched fist
             drawRoundRect(
                 color = headColor,
-                topLeft = Offset(rightArmPivotX - s(5), rightArmPivotY - armLen - s(14)),
+                topLeft = Offset(rightArmPivotX - s(10), rightArmPivotY - armLen - s(14)),
                 size = androidx.compose.ui.geometry.Size(s(24), s(18)),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(6)),
             )
             // Fist lines (knuckle detail)
             drawLine(
                 color = bodyDark,
-                start = Offset(rightArmPivotX, rightArmPivotY - armLen - s(12)),
-                end = Offset(rightArmPivotX + s(14), rightArmPivotY - armLen - s(12)),
+                start = Offset(rightArmPivotX - s(5), rightArmPivotY - armLen - s(12)),
+                end = Offset(rightArmPivotX + s(10), rightArmPivotY - armLen - s(12)),
                 strokeWidth = s(2),
             )
             drawLine(
                 color = bodyDark,
-                start = Offset(rightArmPivotX, rightArmPivotY - armLen - s(7)),
-                end = Offset(rightArmPivotX + s(14), rightArmPivotY - armLen - s(7)),
+                start = Offset(rightArmPivotX - s(5), rightArmPivotY - armLen - s(7)),
+                end = Offset(rightArmPivotX + s(10), rightArmPivotY - armLen - s(7)),
                 strokeWidth = s(2),
             )
         }
