@@ -313,48 +313,26 @@ fun DebugScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaf
 private fun AnimatedRobot(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "robot")
 
-    // Jump bounce
-    val jumpOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -20f,
+    // Right arm fist pump (raised and celebrating)
+    val fistPumpAngle by infiniteTransition.animateFloat(
+        initialValue = -60f,
+        targetValue = -80f,
         animationSpec = infiniteRepeatable(
-            animation = tween(400, easing = LinearEasing),
+            animation = tween(300, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "jumpOffset",
+        label = "fistPump",
     )
 
-    // Left arm wave
-    val leftArmAngle by infiniteTransition.animateFloat(
-        initialValue = -20f,
-        targetValue = -70f,
+    // Antenna sway
+    val antennaSway by infiniteTransition.animateFloat(
+        initialValue = -2f,
+        targetValue = 2f,
         animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = LinearEasing),
+            animation = tween(600, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "leftArm",
-    )
-
-    // Right arm wave (offset phase)
-    val rightArmAngle by infiniteTransition.animateFloat(
-        initialValue = 20f,
-        targetValue = 70f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "rightArm",
-    )
-
-    // Antenna bob
-    val antennaBob by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -4f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(400, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "antennaBob",
+        label = "antennaSway",
     )
 
     // Eye blink
@@ -366,6 +344,16 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
             repeatMode = RepeatMode.Reverse,
         ),
         label = "blink",
+    )
+
+    // Star particles time
+    val starTime by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+        ),
+        label = "starTime",
     )
 
     // Entrance
@@ -385,31 +373,110 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
     val cheekColor = Color(0xFFEF9A9A)
     val antennaColor = Color(0xFFFF7043)
 
+    // Star data: angle offsets and speeds for particles bursting from fist
+    val starSeeds = remember {
+        List(12) { i ->
+            StarSeed(
+                angle = (i * 30f + 15f) * (Math.PI / 180f).toFloat(),
+                speed = 0.6f + (i % 3) * 0.2f,
+                delay = (i % 4) * 0.08f,
+                colorIndex = i % 5,
+            )
+        }
+    }
+    val starColors = remember {
+        listOf(
+            Color(0xFFFFD54F), // gold
+            Color(0xFFFF7043), // orange
+            Color(0xFF42A5F5), // blue
+            Color(0xFF66BB6A), // green
+            Color(0xFFEF5350), // red
+        )
+    }
+
     Canvas(
         modifier = modifier.scale(entranceScale),
     ) {
         val w = size.width
         val h = size.height
         val cx = w / 2f
-        val scale = minOf(w, h) / 300f
+        val sc = minOf(w, h) / 300f
 
-        // Scale helper
-        fun s(v: Float) = v * scale
-        fun s(v: Int) = v * scale
+        fun s(v: Float) = v * sc
+        fun s(v: Int) = v * sc
 
-        // Ground shadow (scales with jump)
-        val shadowScale = 1f + (jumpOffset / 80f)
-        drawOval(
-            color = Color(0x22000000),
-            topLeft = Offset(cx - s(70) * shadowScale, h * 0.88f),
-            size = androidx.compose.ui.geometry.Size(s(140) * shadowScale, s(16)),
-        )
-
-        val jumpPx = jumpOffset * scale
-        val bodyTop = h * 0.42f + s(10) + jumpPx
+        val bodyTop = h * 0.42f + s(10)
         val bodyLeft = cx - s(55)
         val bodyW = s(110)
         val bodyH = s(100)
+
+        // --- Stars (drawn behind robot so they appear to emerge from fist) ---
+        // Compute fist position first to know where stars originate
+        val rightArmPivotX = bodyLeft + bodyW
+        val rightArmPivotY = bodyTop + s(15)
+        // Fist is at end of arm rotated by fistPumpAngle
+        val armLen = s(55)
+        val fistAngleRad = (fistPumpAngle - 90f) * (Math.PI / 180f).toFloat() // -90 so 0 = pointing right
+        // Actually the arm rotates around pivot, so fist position:
+        val fistDirRad = fistPumpAngle * (Math.PI / 180f).toFloat()
+        val fistX = rightArmPivotX + armLen * kotlin.math.sin(fistDirRad) // negative angle = left
+        val fistY = rightArmPivotY - armLen * kotlin.math.cos(fistDirRad) // negative = up
+
+        for (seed in starSeeds) {
+            val t = (starTime - seed.delay).coerceIn(0f, 1f) / (1f - seed.delay) // normalized 0..1
+            if (t <= 0f) continue
+            val dist = t * sc * 180f * seed.speed
+            val shrink = 1f - t * 0.7f // stars shrink to 30% as they travel
+            if (shrink <= 0f) continue
+            val starSize = s(6) * shrink
+            val x = fistX + dist * kotlin.math.cos(seed.angle)
+            val y = fistY - dist * kotlin.math.sin(seed.angle) // negative = upward
+            val alpha = shrink // fade as they shrink
+
+            // 4-pointed star shape
+            val starPath = Path().apply {
+                moveTo(x, y - starSize)
+                lineTo(x + starSize * 0.3f, y)
+                lineTo(x, y + starSize)
+                lineTo(x - starSize * 0.3f, y)
+                close()
+            }
+            drawPath(starPath, starColors[seed.colorIndex].copy(alpha = alpha))
+            // Cross
+            drawLine(
+                color = starColors[seed.colorIndex].copy(alpha = alpha),
+                start = Offset(x - starSize, y),
+                end = Offset(x + starSize, y),
+                strokeWidth = starSize * 0.3f,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = starColors[seed.colorIndex].copy(alpha = alpha),
+                start = Offset(x, y - starSize),
+                end = Offset(x, y + starSize),
+                strokeWidth = starSize * 0.3f,
+                cap = StrokeCap.Round,
+            )
+        }
+
+        // --- Robot body ---
+
+        // Left arm (down by side, relaxed)
+        val leftArmPivotX = bodyLeft
+        val leftArmPivotY = bodyTop + s(15)
+        rotate(-10f, Offset(leftArmPivotX, leftArmPivotY)) {
+            drawRoundRect(
+                color = bodyDark,
+                topLeft = Offset(leftArmPivotX - s(15), leftArmPivotY),
+                size = androidx.compose.ui.geometry.Size(s(18), s(55)),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
+            )
+            drawCircle(
+                color = headColor,
+                radius = s(10),
+                center = Offset(leftArmPivotX - s(6), leftArmPivotY + s(58)),
+            )
+        }
 
         // Legs
         drawRoundRect(
@@ -453,58 +520,43 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
             size = androidx.compose.ui.geometry.Size(s(40), s(30)),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
         )
-        // Panel light (blinking heart)
+        // Panel light
         val heartAlpha = 0.5f + 0.5f * kotlin.math.sin(System.currentTimeMillis() / 300.0).toFloat()
         drawCircle(
             color = accentColor.copy(alpha = heartAlpha),
             radius = s(8),
             center = Offset(cx, bodyTop + s(35)),
         )
-        // Panel dots
-        drawCircle(
-            color = Color(0xFF66BB6A),
-            radius = s(4),
-            center = Offset(cx - s(10), bodyTop + s(25)),
-        )
-        drawCircle(
-            color = Color(0xFFFFA726),
-            radius = s(4),
-            center = Offset(cx + s(10), bodyTop + s(25)),
-        )
+        drawCircle(color = Color(0xFF66BB6A), radius = s(4), center = Offset(cx - s(10), bodyTop + s(25)))
+        drawCircle(color = Color(0xFFFFA726), radius = s(4), center = Offset(cx + s(10), bodyTop + s(25)))
 
-        // Left arm (waves)
-        val leftArmPivotX = bodyLeft
-        val leftArmPivotY = bodyTop + s(15)
-        rotate(leftArmAngle, Offset(leftArmPivotX, leftArmPivotY)) {
+        // Right arm (raised fist!)
+        rotate(fistPumpAngle, Offset(rightArmPivotX, rightArmPivotY)) {
             drawRoundRect(
                 color = bodyDark,
-                topLeft = Offset(leftArmPivotX - s(15), leftArmPivotY),
-                size = androidx.compose.ui.geometry.Size(s(18), s(55)),
+                topLeft = Offset(rightArmPivotX - s(3), rightArmPivotY - armLen),
+                size = androidx.compose.ui.geometry.Size(s(18), armLen),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
             )
-            // Hand
-            drawCircle(
-                color = headColor,
-                radius = s(10),
-                center = Offset(leftArmPivotX - s(6), leftArmPivotY + s(58)),
-            )
-        }
-
-        // Right arm (waves)
-        val rightArmPivotX = bodyLeft + bodyW
-        val rightArmPivotY = bodyTop + s(15)
-        rotate(rightArmAngle, Offset(rightArmPivotX, rightArmPivotY)) {
+            // Clenched fist
             drawRoundRect(
-                color = bodyDark,
-                topLeft = Offset(rightArmPivotX - s(3), rightArmPivotY),
-                size = androidx.compose.ui.geometry.Size(s(18), s(55)),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
-            )
-            // Hand
-            drawCircle(
                 color = headColor,
-                radius = s(10),
-                center = Offset(rightArmPivotX + s(6), rightArmPivotY + s(58)),
+                topLeft = Offset(rightArmPivotX - s(5), rightArmPivotY - armLen - s(14)),
+                size = androidx.compose.ui.geometry.Size(s(24), s(18)),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(6)),
+            )
+            // Fist lines (knuckle detail)
+            drawLine(
+                color = bodyDark,
+                start = Offset(rightArmPivotX, rightArmPivotY - armLen - s(12)),
+                end = Offset(rightArmPivotX + s(14), rightArmPivotY - armLen - s(12)),
+                strokeWidth = s(2),
+            )
+            drawLine(
+                color = bodyDark,
+                start = Offset(rightArmPivotX, rightArmPivotY - armLen - s(7)),
+                end = Offset(rightArmPivotX + s(14), rightArmPivotY - armLen - s(7)),
+                strokeWidth = s(2),
             )
         }
 
@@ -537,10 +589,8 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
         val eyeY = headCenterY - s(8)
         val leftEyeX = cx - s(18)
         val rightEyeX = cx + s(18)
-        // Eye whites
         drawCircle(color = Color.White, radius = s(12), center = Offset(leftEyeX, eyeY))
         drawCircle(color = Color.White, radius = s(12), center = Offset(rightEyeX, eyeY))
-        // Pupils
         drawOval(
             color = eyeColor,
             topLeft = Offset(leftEyeX - s(6), eyeY - s(8 * blink)),
@@ -551,67 +601,66 @@ private fun AnimatedRobot(modifier: Modifier = Modifier) {
             topLeft = Offset(rightEyeX - s(6), eyeY - s(8 * blink)),
             size = androidx.compose.ui.geometry.Size(s(12), s(16 * blink)),
         )
-        // Eye shine
         drawCircle(color = Color.White, radius = s(3), center = Offset(leftEyeX + s(3), eyeY - s(3)))
         drawCircle(color = Color.White, radius = s(3), center = Offset(rightEyeX + s(3), eyeY - s(3)))
 
-        // Smile
+        // Big open smile
         val smilePath = Path().apply {
-            moveTo(cx - s(16), headCenterY + s(12))
-            quadraticBezierTo(cx, headCenterY + s(22), cx + s(16), headCenterY + s(12))
+            moveTo(cx - s(18), headCenterY + s(8))
+            quadraticBezierTo(cx, headCenterY + s(26), cx + s(18), headCenterY + s(8))
+            close()
         }
-        drawPath(
-            path = smilePath,
-            color = eyeColor,
-            style = Stroke(width = s(4), cap = StrokeCap.Round),
+        drawPath(smilePath, eyeColor)
+        // Tongue
+        drawOval(
+            color = Color(0xFFEF9A9A),
+            topLeft = Offset(cx - s(5), headCenterY + s(16)),
+            size = androidx.compose.ui.geometry.Size(s(10), s(8)),
         )
 
         // Cheeks
         drawCircle(
-            color = cheekColor.copy(alpha = 0.5f),
+            color = cheekColor.copy(alpha = 0.6f),
             radius = s(8),
             center = Offset(cx - s(32), headCenterY + s(6)),
         )
         drawCircle(
-            color = cheekColor.copy(alpha = 0.5f),
+            color = cheekColor.copy(alpha = 0.6f),
             radius = s(8),
             center = Offset(cx + s(32), headCenterY + s(6)),
         )
 
         // Ears
-        drawCircle(
-            color = bodyColor,
-            radius = s(12),
-            center = Offset(cx - s(50), headCenterY - s(5)),
-        )
-        drawCircle(
-            color = bodyColor,
-            radius = s(12),
-            center = Offset(cx + s(50), headCenterY - s(5)),
-        )
+        drawCircle(color = bodyColor, radius = s(12), center = Offset(cx - s(50), headCenterY - s(5)))
+        drawCircle(color = bodyColor, radius = s(12), center = Offset(cx + s(50), headCenterY - s(5)))
 
-        // Antenna stem
+        // Antenna
         drawLine(
             color = bodyDark,
             start = Offset(cx, headCenterY - s(40)),
-            end = Offset(cx, headCenterY - s(60) + antennaBob),
+            end = Offset(cx + antennaSway * sc * 3, headCenterY - s(60)),
             strokeWidth = s(5),
             cap = StrokeCap.Round,
         )
-        // Antenna ball
         drawCircle(
             color = antennaColor,
             radius = s(10),
-            center = Offset(cx, headCenterY - s(65) + antennaBob),
+            center = Offset(cx + antennaSway * sc * 3, headCenterY - s(65)),
         )
-        // Antenna glow
         drawCircle(
             color = antennaColor.copy(alpha = 0.3f),
             radius = s(16),
-            center = Offset(cx, headCenterY - s(65) + antennaBob),
+            center = Offset(cx + antennaSway * sc * 3, headCenterY - s(65)),
         )
     }
 }
+
+private data class StarSeed(
+    val angle: Float,
+    val speed: Float,
+    val delay: Float,
+    val colorIndex: Int,
+)
 
 @Composable
 private fun AnimatedTrophy(modifier: Modifier = Modifier) {
