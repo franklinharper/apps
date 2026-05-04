@@ -8,8 +8,8 @@ class DicewarsMapGenerationTest {
 
     @Test
     fun generatedMapHasValidActiveTerritories() {
-        val game = DicewarsGame()
-        val map = game.makeMap(SequenceRandomSource())
+        val game = DicewarsGame.generate(7, SequenceRandomSource())
+        val map = game.toRenderMap()
 
         val activeTerritories = map.territories.filter { it.size > 0 }
         assertTrue(activeTerritories.isNotEmpty())
@@ -22,7 +22,7 @@ class DicewarsMapGenerationTest {
 
     @Test
     fun generatedMapContainsOpenSeaCells() {
-        val map = DicewarsGame().makeMap(SequenceRandomSource())
+        val map = DicewarsGame.generate(7, SequenceRandomSource()).toRenderMap()
 
         assertTrue(map.cells.any { it == 0 }, "generated maps should contain unoccupied sea/open cells")
     }
@@ -30,9 +30,7 @@ class DicewarsMapGenerationTest {
     @Test
     fun generatedMapGivesEveryPlayerTheSameInitialArmyTotal() {
         for (playerCount in 2..8) {
-            val game = DicewarsGame()
-            game.pmax = playerCount
-            game.makeMap(SequenceRandomSource())
+            val game = DicewarsGame.generate(playerCount, SequenceRandomSource())
 
             val armyTotals = (0 until playerCount).map { player ->
                 game.areas
@@ -48,9 +46,17 @@ class DicewarsMapGenerationTest {
     }
 
     @Test
+    fun generatedMapRandomizesTurnOrder() {
+        val game = DicewarsGame.generate(4, ZeroRandomSource())
+
+        assertEquals((0 until game.pmax).toSet(), game.turnOrder.take(game.pmax).toSet())
+        assertTrue(game.currentPlayer() != 0, "first player should come from shuffled turn order, not always player 0")
+    }
+
+    @Test
     fun adjacencyIsSymmetric() {
-        val game = DicewarsGame()
-        val map = game.makeMap(SequenceRandomSource())
+        val game = DicewarsGame.generate(7, SequenceRandomSource())
+        val map = game.toRenderMap()
 
         map.territories.forEachIndexed { index, territory ->
             val areaId = index + 1
@@ -67,8 +73,8 @@ class DicewarsMapGenerationTest {
 
     @Test
     fun everyActiveCellReferencesAnActiveTerritoryUsingJsAreaIds() {
-        val game = DicewarsGame()
-        val map = game.makeMap(SequenceRandomSource())
+        val game = DicewarsGame.generate(7, SequenceRandomSource())
+        val map = game.toRenderMap()
 
         map.cells.forEach { areaId ->
             if (areaId > 0) {
@@ -80,15 +86,13 @@ class DicewarsMapGenerationTest {
 
     @Test
     fun adapterMapsGameFieldsToRendererModelConsistently() {
-        val game = DicewarsGame()
-        game.makeMap(SequenceRandomSource())
-
+        val game = DicewarsGame.generate(7, SequenceRandomSource())
         val map = game.toRenderMap()
 
         assertEquals(DicewarsGame.XMAX, map.width)
         assertEquals(DicewarsGame.YMAX, map.height)
-        assertEquals(game.cells.toList(), map.cells.toList())
-        assertEquals(game.cellNeighbors[29].directions.toList(), map.cellNeighbors[29].directions.toList())
+        assertEquals(game.cells, map.cells)
+        assertEquals(game.cellNeighbors[29].directions, map.cellNeighbors[29].directions)
 
         for (areaId in 1 until DicewarsGame.AREA_MAX) {
             val area = game.areas[areaId]
@@ -98,10 +102,19 @@ class DicewarsMapGenerationTest {
             assertEquals(area.centerPos, territory.centerPos)
             assertEquals(area.size, territory.size)
             assertEquals(
-                area.adjacentAreas.withIndex().filter { it.index > 0 && it.value != 0 }.map { it.index },
+                area.adjacentAreas.mapIndexedNotNull { index, value ->
+                    if (index > 0 && value != 0) index else null
+                },
                 territory.adjacentTerritories,
             )
         }
+    }
+}
+
+private class ZeroRandomSource : RandomSource {
+    override fun nextInt(bound: Int): Int {
+        require(bound > 0)
+        return 0
     }
 }
 

@@ -23,7 +23,7 @@ fun DicewarsGame.isLegalAttack(from: Int, to: Int, player: Int = currentPlayer()
     return true
 }
 
-fun DicewarsGame.rollBattle(
+fun rollBattle(
     attackerDiceCount: Int,
     defenderDiceCount: Int,
     random: RandomSource,
@@ -41,32 +41,36 @@ fun DicewarsGame.rollBattle(
     )
 }
 
-fun DicewarsGame.resolveBattle(from: Int, to: Int, roll: BattleRoll): BattleRoll {
+fun DicewarsGame.resolveBattle(from: Int, to: Int, roll: BattleRoll): DicewarsGame {
     val attackerOwner = areas[from].owner
     val defenderOwner = areas[to].owner
+    val newAreas = areas.toMutableList()
 
     if (roll.success) {
-        areas[to].dice = areas[from].dice - 1
-        areas[from].dice = 1
-        areas[to].owner = attackerOwner
-        setAreaTc(attackerOwner)
-        setAreaTc(defenderOwner)
+        newAreas[to] = newAreas[to].copy(dice = newAreas[from].dice - 1, owner = attackerOwner)
+        newAreas[from] = newAreas[from].copy(dice = 1)
     } else {
-        areas[from].dice = 1
+        newAreas[from] = newAreas[from].copy(dice = 1)
     }
 
-    setHistory(from, to, if (roll.success) 1 else 0)
-    return roll
+    val newHistory = history + HistoryData(from = from, to = to, result = if (roll.success) 1 else 0)
+    var game = copy(areas = newAreas.toList(), history = newHistory)
+    game = game.setAreaTc(attackerOwner)
+    if (roll.success) game = game.setAreaTc(defenderOwner)
+    return game
 }
 
-fun DicewarsGame.startSupply(player: Int = currentPlayer()): Int {
-    setAreaTc(player)
-    players[player].stock = (players[player].stock + players[player].maxConnectedAreaCount)
+fun DicewarsGame.startSupply(player: Int = currentPlayer()): DicewarsGame {
+    var game = setAreaTc(player)
+    val playerData = game.players[player]
+    val newStock = (playerData.stock + playerData.maxConnectedAreaCount)
         .coerceAtMost(DicewarsGame.STOCK_MAX)
-    return players[player].stock
+    val newPlayers = game.players.toMutableList()
+    newPlayers[player] = playerData.copy(stock = newStock)
+    return game.copy(players = newPlayers.toList())
 }
 
-fun DicewarsGame.supplyOneDie(player: Int = currentPlayer(), random: RandomSource): Int? {
+fun DicewarsGame.supplyOneDie(player: Int, random: RandomSource): Pair<DicewarsGame, Int?> {
     val candidates = mutableListOf<Int>()
     for (areaNumber in 1 until DicewarsGame.AREA_MAX) {
         val area = areas[areaNumber]
@@ -76,73 +80,72 @@ fun DicewarsGame.supplyOneDie(player: Int = currentPlayer(), random: RandomSourc
         candidates.add(areaNumber)
     }
 
-    if (candidates.isEmpty() || players[player].stock <= 0) return null
+    if (candidates.isEmpty() || players[player].stock <= 0) return this to null
 
     val areaNumber = candidates[random.nextInt(candidates.size)]
-    players[player].stock--
-    areas[areaNumber].dice++
-    setHistory(areaNumber, 0, 0)
-    return areaNumber
+    val newPlayers = players.toMutableList()
+    newPlayers[player] = newPlayers[player].copy(stock = newPlayers[player].stock - 1)
+    val newAreas = areas.toMutableList()
+    newAreas[areaNumber] = newAreas[areaNumber].copy(dice = newAreas[areaNumber].dice + 1)
+    return copy(
+        areas = newAreas.toList(),
+        players = newPlayers.toList(),
+        history = history + HistoryData(from = areaNumber, to = 0, result = 0),
+    ) to areaNumber
 }
 
-fun DicewarsGame.nextPlayer(): Int {
+fun DicewarsGame.nextPlayer(): DicewarsGame {
+    var newTurnIndex = turnIndex
     for (i in 0 until pmax) {
-        turnIndex++
-        if (turnIndex >= pmax) turnIndex = 0
-        val player = turnOrder[turnIndex]
+        newTurnIndex++
+        if (newTurnIndex >= pmax) newTurnIndex = 0
+        val player = turnOrder[newTurnIndex]
         if (players[player].maxConnectedAreaCount > 0) break
     }
-    return currentPlayer()
+    return copy(turnIndex = newTurnIndex)
 }
 
-fun DicewarsGame.setAreaTc(player: Int) {
-    players[player].maxConnectedAreaCount = 0
-
-    for (i in 0 until DicewarsGame.AREA_MAX) check[i] = i
-
+fun DicewarsGame.setAreaTc(player: Int): DicewarsGame {
+    val check = MutableList(DicewarsGame.AREA_MAX) { it }
     while (true) {
         var changed = false
-        loop@ for (i in 1 until DicewarsGame.AREA_MAX) {
-            if (areas[i].size == 0) continue
-            if (areas[i].owner != player) continue
-            for (j in 1 until DicewarsGame.AREA_MAX) {
-                if (areas[j].size == 0) continue
-                if (areas[j].owner != player) continue
-                if (areas[i].adjacentAreas[j] == 0) continue
-                if (check[j] == check[i]) continue
-                if (check[i] > check[j]) {
-                    check[i] = check[j]
-                } else {
-                    check[j] = check[i]
+        run loop@{
+            for (i in 1 until DicewarsGame.AREA_MAX) {
+                if (areas[i].size == 0 || areas[i].owner != player) continue
+                for (j in 1 until DicewarsGame.AREA_MAX) {
+                    if (areas[j].size == 0 || areas[j].owner != player) continue
+                    if (areas[i].adjacentAreas[j] == 0) continue
+                    if (check[j] == check[i]) continue
+                    if (check[i] > check[j]) check[i] = check[j]
+                    else check[j] = check[i]
+                    changed = true
+                    return@loop
                 }
-                changed = true
-                break@loop
             }
         }
         if (!changed) break
     }
 
-    for (i in 0 until DicewarsGame.AREA_MAX) connectedAreaCounts[i] = 0
+    val connectedAreaCounts = MutableList(DicewarsGame.AREA_MAX) { 0 }
     var areaCount = 0
     var diceCount = 0
     for (i in 1 until DicewarsGame.AREA_MAX) {
-        if (areas[i].size == 0) continue
-        if (areas[i].owner != player) continue
+        if (areas[i].size == 0 || areas[i].owner != player) continue
         connectedAreaCounts[check[i]]++
         areaCount++
         diceCount += areas[i].dice
     }
 
     var maxConnected = 0
-    for (i in 0 until DicewarsGame.AREA_MAX) {
-        if (connectedAreaCounts[i] > maxConnected) maxConnected = connectedAreaCounts[i]
+    for (count in connectedAreaCounts) {
+        if (count > maxConnected) maxConnected = count
     }
 
-    players[player].areaCount = areaCount
-    players[player].diceCount = diceCount
-    players[player].maxConnectedAreaCount = maxConnected
-}
-
-fun DicewarsGame.setHistory(from: Int, to: Int, result: Int) {
-    history.add(HistoryData(from = from, to = to, result = result))
+    val newPlayers = players.toMutableList()
+    newPlayers[player] = newPlayers[player].copy(
+        areaCount = areaCount,
+        diceCount = diceCount,
+        maxConnectedAreaCount = maxConnected,
+    )
+    return copy(players = newPlayers.toList())
 }

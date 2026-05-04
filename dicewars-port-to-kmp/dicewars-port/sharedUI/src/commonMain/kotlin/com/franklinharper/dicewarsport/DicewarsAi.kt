@@ -33,13 +33,25 @@ class ExampleAi(private val random: RandomSource) : AiStrategy {
 
 class DefaultAi(private val random: RandomSource) : AiStrategy {
     override fun chooseMove(game: DicewarsGame): Move? {
-        updateAreaAndDiceCounts(game)
-        updateDiceRanks(game)
+        val areaCounts = MutableList(8) { 0 }
+        val diceCounts = MutableList(8) { 0 }
+        for (areaNumber in 1 until DicewarsGame.AREA_MAX) {
+            val area = game.areas[areaNumber]
+            if (area.size == 0) continue
+            val owner = area.owner
+            if (owner !in 0 until 8) continue
+            areaCounts[owner]++
+            diceCounts[owner] += area.dice
+        }
 
-        val totalDice = game.players.sumOf { it.diceCount }
+        val rankedPlayers = (0 until 8).sortedByDescending { diceCounts[it] }
+        val diceRanks = IntArray(8)
+        rankedPlayers.forEachIndexed { rank, player -> diceRanks[player] = rank }
+
+        val totalDice = diceCounts.sum()
         var topPlayer = -1
         for (player in 0 until 8) {
-            if (game.players[player].diceCount > totalDice * 2 / 5) topPlayer = player
+            if (diceCounts[player] > totalDice * 2 / 5) topPlayer = player
         }
 
         val currentPlayer = game.currentPlayer()
@@ -61,8 +73,8 @@ class DefaultAi(private val random: RandomSource) : AiStrategy {
                 if (defender.dice == attacker.dice) {
                     val enemy = defender.owner
                     var shouldAttack = false
-                    if (game.players[currentPlayer].diceRank == 0) shouldAttack = true
-                    if (game.players[enemy].diceRank == 0) shouldAttack = true
+                    if (diceRanks[currentPlayer] == 0) shouldAttack = true
+                    if (diceRanks[enemy] == 0) shouldAttack = true
                     if (random.nextInt(10) > 1) shouldAttack = true
                     if (!shouldAttack) continue
                 }
@@ -71,26 +83,6 @@ class DefaultAi(private val random: RandomSource) : AiStrategy {
         }
 
         return moves.randomOrNull(random)
-    }
-
-    private fun updateAreaAndDiceCounts(game: DicewarsGame) {
-        for (player in 0 until 8) {
-            game.players[player].areaCount = 0
-            game.players[player].diceCount = 0
-        }
-        for (areaNumber in 1 until DicewarsGame.AREA_MAX) {
-            val area = game.areas[areaNumber]
-            if (area.size == 0) continue
-            val owner = area.owner
-            if (owner !in 0 until 8) continue
-            game.players[owner].areaCount++
-            game.players[owner].diceCount += area.dice
-        }
-    }
-
-    private fun updateDiceRanks(game: DicewarsGame) {
-        val rankedPlayers = (0 until 8).sortedByDescending { game.players[it].diceCount }
-        rankedPlayers.forEachIndexed { rank, player -> game.players[player].diceRank = rank }
     }
 }
 

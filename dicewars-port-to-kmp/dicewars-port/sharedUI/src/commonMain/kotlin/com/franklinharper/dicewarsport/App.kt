@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -51,12 +52,7 @@ fun App(
     val random = remember { KotlinRandomSource() }
     val reducer = remember { GameReducer(random) }
     var state by remember {
-        mutableStateOf(
-            GameUiState(
-                screen = DicewarsScreen.Loading,
-                game = DicewarsGame().also { it.makeMap(random) },
-            ),
-        )
+        mutableStateOf(GameUiState(screen = DicewarsScreen.Loading, game = DicewarsGame()))
     }
 
     DicewarsApp(
@@ -76,10 +72,8 @@ fun DicewarsApp(
         DicewarsScreen.MapPreview -> MapPreviewScreen(state, onAction)
         DicewarsScreen.HumanTurn -> GameBoardScreen(state, onAction, title = "Your turn")
         DicewarsScreen.AiTurn -> GameBoardScreen(state, onAction, title = "AI turn")
-        DicewarsScreen.Supply -> SupplyScreen(state, onAction)
         DicewarsScreen.GameOver -> GameOverScreen(onAction)
         DicewarsScreen.Win -> WinScreen(onAction)
-        DicewarsScreen.History -> HistoryScreen(state, onAction)
     }
 }
 
@@ -89,10 +83,8 @@ fun routedDicewarsScreens(): Set<DicewarsScreen> = setOf(
     DicewarsScreen.MapPreview,
     DicewarsScreen.HumanTurn,
     DicewarsScreen.AiTurn,
-    DicewarsScreen.Supply,
     DicewarsScreen.GameOver,
     DicewarsScreen.Win,
-    DicewarsScreen.History,
 )
 
 @Composable
@@ -174,18 +166,12 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
         )
         Button(onClick = { onAction(GameAction.EndTurn) }) { Text("End turn") }
     } else {
-        Button(onClick = { onAction(GameAction.AiStep) }) { Text("AI step") }
+        LaunchedEffect(state.game) {
+            delay(300)
+            onAction(GameAction.AiStep)
+        }
+        Text("AI is playing…")
     }
-}
-
-@Composable
-fun SupplyScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
-    title = "Supply",
-    showBackButton = true,
-    onBack = { onAction(GameAction.BackToTitle) },
-) {
-    Text("Player ${state.game.currentPlayer()} receives supply")
-    Button(onClick = { onAction(GameAction.SupplyAnimationFinished) }) { Text("Continue") }
 }
 
 @Composable
@@ -194,7 +180,6 @@ fun GameOverScreen(onAction: (GameAction) -> Unit) = ScreenScaffold(
     showBackButton = true,
     onBack = { onAction(GameAction.BackToTitle) },
 ) {
-    Button(onClick = { onAction(GameAction.OpenHistory) }) { Text("History") }
     Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
 }
 
@@ -204,17 +189,6 @@ fun WinScreen(onAction: (GameAction) -> Unit) = ScreenScaffold(
     showBackButton = true,
     onBack = { onAction(GameAction.BackToTitle) },
 ) {
-    Button(onClick = { onAction(GameAction.OpenHistory) }) { Text("History") }
-    Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
-}
-
-@Composable
-fun HistoryScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
-    title = "History",
-    showBackButton = true,
-    onBack = { onAction(GameAction.BackToTitle) },
-) {
-    Text("${state.game.history.size} recorded events")
     Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
 }
 
@@ -225,8 +199,19 @@ private fun PlayerStatusBar(game: DicewarsGame) {
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        for (player in 0 until game.pmax) {
+        for (player in game.turnOrder.take(game.pmax)) {
+            val isCurrentPlayer = player == game.currentPlayer()
             Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (isCurrentPlayer) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.background
+                        },
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -239,6 +224,11 @@ private fun PlayerStatusBar(game: DicewarsGame) {
                 Text(
                     text = "${game.players[player].maxConnectedAreaCount}",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = if (isCurrentPlayer) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onBackground
+                    },
                 )
             }
         }
@@ -296,10 +286,6 @@ private fun ColumnScope.Board(state: GameUiState, onAction: (GameAction) -> Unit
     ) {
         val availableWidthPx = constraints.maxWidth.toFloat()
         val availableHeightPx = constraints.maxHeight.toFloat()
-        // Rendered hex height = cellHeight * 4/3.
-        // For regular pointy-top hexagons: hexHeight/hexWidth = sqrt(3)/2 ≈ 0.866.
-        // Using cellWidth:cellHeight = 3:2 (matching battlezone's 27:18 ratio)
-        // gives hexHeight = cellWidth * 2/3 * 4/3 = cellWidth * 8/9 ≈ 0.889 * cellWidth.
         val cellWidthFromWidth = availableWidthPx / (HexGrid.GRID_WIDTH + 0.5f)
         val cellWidthFromHeight = availableHeightPx / HexGrid.GRID_HEIGHT
         val cellWidth = minOf(cellWidthFromWidth, cellWidthFromHeight)

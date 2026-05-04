@@ -18,8 +18,6 @@ sealed interface GameAction {
     data class TerritoryClicked(val territoryId: Int) : GameAction
     data object EndTurn : GameAction
     data object AiStep : GameAction
-    data object SupplyAnimationFinished : GameAction
-    data object OpenHistory : GameAction
     data object BackToTitle : GameAction
     data object StartSpectate : GameAction
 }
@@ -30,26 +28,23 @@ class GameReducer(
 ) {
     fun reduce(state: GameUiState, action: GameAction): GameUiState = when (action) {
         GameAction.LoadingFinished -> state.copy(screen = DicewarsScreen.Title)
-        is GameAction.SelectPlayerCount -> {
-            state.game.pmax = action.count
-            state.copy(selectedPlayerCount = action.count)
-        }
+        is GameAction.SelectPlayerCount -> state.copy(selectedPlayerCount = action.count)
         GameAction.StartPressed -> {
-            state.game.pmax = state.selectedPlayerCount
-            state.game.makeMap(random)
-            state.copy(screen = DicewarsScreen.MapPreview)
+            val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
+            state.copy(game = newGame, screen = DicewarsScreen.MapPreview)
         }
-        GameAction.StartSpectate -> state.copy(screen = DicewarsScreen.MapPreview, spectateMode = true)
+        GameAction.StartSpectate -> {
+            val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
+            state.copy(game = newGame, screen = DicewarsScreen.MapPreview, spectateMode = true)
+        }
         GameAction.AcceptMap -> state.copy(screen = turnScreenFor(state.game, state.spectateMode))
         GameAction.RejectMap -> {
-            state.game.makeMap(random)
-            state.copy(screen = DicewarsScreen.MapPreview)
+            val newGame = DicewarsGame.generate(state.game.pmax, random)
+            state.copy(game = newGame, screen = DicewarsScreen.MapPreview)
         }
         is GameAction.TerritoryClicked -> onTerritoryClicked(state, action.territoryId)
-        GameAction.EndTurn -> state.copy(screen = DicewarsScreen.Supply, selectedFrom = null, selectedTo = null)
+        GameAction.EndTurn -> onTurnFinished(state)
         GameAction.AiStep -> onAiStep(state)
-        GameAction.SupplyAnimationFinished -> onSupplyFinished(state)
-        GameAction.OpenHistory -> state.copy(screen = DicewarsScreen.History)
         GameAction.BackToTitle -> state.copy(screen = DicewarsScreen.Title, selectedFrom = null, selectedTo = null)
     }
 
@@ -69,20 +64,21 @@ class GameReducer(
         if (territoryId == selectedFrom) return state.copy(selectedFrom = null, selectedTo = null)
         if (!state.game.isLegalAttack(selectedFrom, territoryId)) return state
 
-        val roll = state.game.rollBattle(
+        val roll = rollBattle(
             attackerDiceCount = state.game.areas[selectedFrom].dice,
             defenderDiceCount = state.game.areas[territoryId].dice,
             random = random,
         )
-        state.game.resolveBattle(selectedFrom, territoryId, roll)
+        val newGame = state.game.resolveBattle(selectedFrom, territoryId, roll)
 
-        val terminalScreen = terminalScreenOrNull(state.game, state.spectateMode)
+        val terminalScreen = terminalScreenOrNull(newGame, state.spectateMode)
         if (terminalScreen != null) {
-            return state.copy(screen = terminalScreen, selectedFrom = null, selectedTo = null)
+            return state.copy(game = newGame, screen = terminalScreen, selectedFrom = null, selectedTo = null)
         }
 
         return state.copy(
-            screen = turnScreenFor(state.game, state.spectateMode),
+            game = newGame,
+            screen = turnScreenFor(newGame, state.spectateMode),
             selectedFrom = null,
             selectedTo = null,
         )
@@ -92,31 +88,44 @@ class GameReducer(
         if (state.screen != DicewarsScreen.AiTurn) return state
         val player = state.game.currentPlayer()
         val strategy = aiStrategies[player] ?: DefaultAi(random)
-        val move = strategy.chooseMove(state.game) ?: return state.copy(screen = DicewarsScreen.Supply)
-        if (!state.game.isLegalAttack(move.from, move.to, player)) return state.copy(screen = DicewarsScreen.Supply)
+        val move = strategy.chooseMove(state.game) ?: return onTurnFinished(state)
+        if (!state.game.isLegalAttack(move.from, move.to, player)) return onTurnFinished(state)
 
-        val roll = state.game.rollBattle(
+        val roll = rollBattle(
             attackerDiceCount = state.game.areas[move.from].dice,
             defenderDiceCount = state.game.areas[move.to].dice,
             random = random,
         )
-        state.game.resolveBattle(move.from, move.to, roll)
+        val newGame = state.game.resolveBattle(move.from, move.to, roll)
 
-        val terminalScreen = terminalScreenOrNull(state.game, state.spectateMode)
+        val terminalScreen = terminalScreenOrNull(newGame, state.spectateMode)
         if (terminalScreen != null) {
-            return state.copy(screen = terminalScreen, selectedFrom = null, selectedTo = null)
+            return state.copy(game = newGame, screen = terminalScreen, selectedFrom = null, selectedTo = null)
         }
 
         return state.copy(
-            screen = turnScreenFor(state.game, state.spectateMode),
+            game = newGame,
+            screen = turnScreenFor(newGame, state.spectateMode),
             selectedFrom = null,
             selectedTo = null,
         )
     }
 
-    private fun onSupplyFinished(state: GameUiState): GameUiState {
-        state.game.nextPlayer()
-        return state.copy(screen = turnScreenFor(state.game, state.spectateMode), selectedFrom = null, selectedTo = null)
+    private fun onTurnFinished(state: GameUiState): GameUiState {
+        val player = state.game.currentPlayer()
+        var game = state.game.startSupply(player)
+        while (true) {
+            val (newGame, areaNumber) = game.supplyOneDie(player, random)
+            game = newGame
+            if (areaNumber == null) break
+        }
+        game = game.nextPlayer()
+        return state.copy(
+            game = game,
+            screen = turnScreenFor(game, state.spectateMode),
+            selectedFrom = null,
+            selectedTo = null,
+        )
     }
 
     private fun terminalScreenOrNull(game: DicewarsGame, spectateMode: Boolean): DicewarsScreen? {
