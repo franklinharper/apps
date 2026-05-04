@@ -1,5 +1,8 @@
 package com.franklinharper.dicewarsport
 
+import com.franklinharper.dicewarsport.ai.DefaultAi
+import com.franklinharper.dicewarsport.ai.DefensiveAi
+import com.franklinharper.dicewarsport.ai.ExampleAi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

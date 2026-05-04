@@ -1,4 +1,7 @@
-package com.franklinharper.dicewarsport
+package com.franklinharper.dicewarsport.ai
+
+import com.franklinharper.dicewarsport.DicewarsGame
+import com.franklinharper.dicewarsport.RandomSource
 
 class ExampleAi(private val random: RandomSource) : AiStrategy {
     override fun chooseMove(game: DicewarsGame): Move? {

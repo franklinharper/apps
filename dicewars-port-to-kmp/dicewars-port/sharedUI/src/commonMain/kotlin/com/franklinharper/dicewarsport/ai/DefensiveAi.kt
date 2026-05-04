@@ -1,4 +1,7 @@
-package com.franklinharper.dicewarsport
+package com.franklinharper.dicewarsport.ai
+
+import com.franklinharper.dicewarsport.DicewarsGame
+import com.franklinharper.dicewarsport.isLegalAttack
 
 class DefensiveAi : AiStrategy {
     override fun chooseMove(game: DicewarsGame): Move? {

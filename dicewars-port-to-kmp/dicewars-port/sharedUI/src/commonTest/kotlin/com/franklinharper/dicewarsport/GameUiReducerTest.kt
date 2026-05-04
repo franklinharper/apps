@@ -1,5 +1,7 @@
 package com.franklinharper.dicewarsport
 
+import com.franklinharper.dicewarsport.ai.AiStrategy
+import com.franklinharper.dicewarsport.ai.Move
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

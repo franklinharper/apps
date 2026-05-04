@@ -1,5 +1,8 @@
 package com.franklinharper.dicewarsport
 
+import com.franklinharper.dicewarsport.ai.AiStrategy
+import com.franklinharper.dicewarsport.ai.DefaultAi
+
 class GameReducer(
     private val random: RandomSource,
     private val aiStrategies: Map<Int, AiStrategy> = emptyMap(),
