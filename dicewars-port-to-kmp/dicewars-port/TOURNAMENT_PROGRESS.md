@@ -20,7 +20,7 @@ Progress status values:
 | T2 - Headless round runner | Done | Added `BotGameRunnerTest`; first integrated run failed at compile with missing `setAreaTc` import in test, then passed after correction | Added pure `RoundRunner`/`BotGameRunner` with injected game factory, AI-only turns, battle resolution, supply/end-turn handling, eliminations, winner detection, max-action failure | `./gradlew :sharedUI:jvmTest --console=plain` passed | Illegal AI moves are treated as no attack/end turn. Runner is headless and does not depend on Compose. |
 | T3 - Tournament runner | Done | Added `TournamentRunnerTest`; no separate red-only run captured for this phase | Added `TournamentRunner`, participant rotation, per-round derived seeds, built-in participant registry | `./gradlew :sharedUI:jvmTest --console=plain` passed | Seed implementation uses one effective tournament seed and derives an independent seed per round. If no seed is supplied, a random effective seed is generated and reported. Seating rotates left each round. |
 | T4 - Report formatters | Done | Added `TournamentReportFormatterTest`; no separate red-only run captured for this phase | Added `TournamentReportFormatter`, plain text formatter, and combined score/round CSV formatter | `./gradlew :sharedUI:jvmTest --console=plain` passed | CSV v1 uses one stable combined table with `section` rows for scores and rounds. Text and CSV reports include the effective tournament seed. JSON/Markdown deferred. |
-| T5 - CLI module | Done | Added `CliOptionsTest`; no separate red-only run captured for this phase | Added `tournamentCli` JVM module, manual CLI parser, `runTournamentCli`, Gradle `run`, fat JAR task, and `generateTournamentDist` | `./gradlew :tournamentCli:test --console=plain` passed; `./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 3 --seed 1 --format text --max-actions 1000" --console=plain` passed; CSV run passed | CLI supports `--bots`, `--rounds`, `--seed`, `--format`, `--out`, and `--max-actions`. |
+| T5 - CLI module | Done | Added `CliOptionsTest`; no separate red-only run captured for this phase | Added `tournamentCli` JVM module, manual CLI parser, `runTournamentCli`, Gradle `run`, fat JAR task, and `generateTournamentDist` | `./gradlew :tournamentCli:test --console=plain` passed; `./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format text --max-actions 1000" --console=plain` passed; CSV run passed | CLI supports `--bots`, `--rounds`, `--seed`, `--format`, `--out`, and `--max-actions`. |
 | T6 - Smart wrapper script | Done | Manual first/second wrapper run validated rebuild then skip behavior | Added executable `scripts/run-tournament`; wrapper computes source hash, calls `:tournamentCli:generateTournamentDist` when needed, stores `dist/tournament-cli/source.hash`, and launches the fat JAR | First wrapper run rebuilt; second wrapper run printed `Tournament CLI unchanged; using existing build.`; `--out` CSV run wrote `build/tmp/tournament-report.csv` | Wrapper overwrites `source.hash` with its computed hash after Gradle build to keep skip behavior stable. Gradle hash code was corrected to use unsigned byte hex. |
 | T7 - Validation | Done | N/A | Full tournament v1 validated | `./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain` passed; Gradle CLI text and CSV runs passed; wrapper text and CSV/out runs passed | Gradle emits existing deprecation/problem-report notices, but commands pass. |
 | R1 - Per-round repro seeds and metadata | Done | Added `RoundReproMetadataTest`; red run failed with unresolved `deriveRoundSeed`, missing `RoundResult.roundSeed`, `seatedParticipantIds`, and `maxActionsPerRound` | Added `deriveRoundSeed`; `RoundConfig` now carries `roundSeed`; `RoundResult` carries round seed, seats, and max actions; `TournamentRunner` derives per-round seeds | `./gradlew :sharedUI:jvmTest --console=plain` passed | Failed rounds can now be reproduced without replaying earlier tournament rounds. |
@@ -29,9 +29,10 @@ Progress status values:
 | R4 - Report repro metadata | Done | Updated formatter tests; red run failed because text/CSV lacked round seed, seats, max actions, repro command, and action-log count | Updated plain text failed-round section and CSV columns to include repro metadata | `./gradlew :sharedUI:jvmTest --console=plain` passed | Text reports include copyable `./scripts/replay-round ...` commands. |
 | R5 - Replay CLI and wrapper | Done | Added CLI tests; red run failed with missing log flag fields and replay subcommand support | Added CLI log flags, `replay-round` subcommand, replay output formatting, and `scripts/replay-round` wrapper | `./gradlew :tournamentCli:test --console=plain` passed; wrapper replay smoke test passed | Replay wrapper reuses the same tournament CLI fat JAR/hash rebuild mechanism. |
 | R6 - Repro validation | Done | N/A | Repro workflow validated end to end | `./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain` passed; `./gradlew test --console=plain` passed; failed-round report and replay command smoke-tested | Full test run emits existing Compose deprecation warnings. |
-| R7 - Last-step replay output and shared GUI-ready spec | Not Started |  |  |  | Planned: replace `--steps` with `--last-steps`; remove `--until-failed`/`--until-complete`; add pasteable `ROUND_REPLAY_SPEC`; add shared spec parser/formatter and action debug formatter; document GUI timeline/back-step behavior. |
+| R7 - Last-step replay output and shared GUI-ready spec | Done | Added tests for `RoundReplaySpecParser`, `RoundActionDebugFormatter`, `ReplayOptions.lastSteps`, removed replay flags, last-step replay output, and report spec block; red run failed with unresolved parser/formatter and missing `lastSteps` | Added shared `RoundReplaySpecText`/`RoundReplaySpecParser`, shared `RoundActionDebugFormatter`; updated reports to include `ROUND_REPLAY_SPEC` and `--last-steps`; updated replay CLI to run to end and print rolling last entries; removed `--steps`, `--until-failed`, and `--until-complete` support/help | `./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain` passed; wrapper smoke tests passed | Replay terminal entries now print `End:`. Future GUI can reuse parser and formatter. |
 | G1 - Compose replay GUI state/reducer | Deferred |  |  |  | Future: paste replay spec, load, step forward/back 1/10/100, run to end, reset. Store every timeline state initially; optimize with checkpoints later if needed. |
 | G2 - Compose replay debug screen | Deferred |  |  |  | Future UI over replay reducer and existing board renderer. Loading spec from report file is deferred beyond paste input. |
+| N1 - Bot naming cleanup | Done | Existing tests referenced old class names and CLI IDs | Renamed AI classes and built-in participant IDs: `DefaultAi` -> `TargetTheLeader` (`target-leader`), `DefensiveAi` -> `CautiousBot` (`cautious`), `ExampleAi` -> `AlwaysAttackWhenStrongerBot` (`attack-when-stronger`) | `./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain` passed; `./gradlew test --console=plain` passed; wrapper smoke tests with new IDs passed | Updated docs, tests, CLI help/examples, tournament registry, default reducer AI, and generated CLI dist. |
 
 ## Tracking Procedure
 
@@ -183,8 +184,8 @@ Suggested commands:
 
 ```bash
 ./gradlew :tournamentCli:test --console=plain
-./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 10 --seed 42 --format text" --console=plain
-./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 10 --seed 42 --format csv" --console=plain
+./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 10 --seed 42 --format text" --console=plain
+./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 10 --seed 42 --format csv" --console=plain
 ```
 
 ### T6 - Smart wrapper script
@@ -209,8 +210,8 @@ dist/tournament-cli/dicewars-tournament-cli-all.jar
 Suggested commands:
 
 ```bash
-./scripts/run-tournament --bots default,defensive,example --rounds 3 --seed 1 --format text
-./scripts/run-tournament --bots default,defensive,example --rounds 3 --seed 1 --format text
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format text
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format text
 ```
 
 The second command should report that the existing build is reused, or otherwise clearly skip the Gradle rebuild.
@@ -222,10 +223,10 @@ Done when all relevant commands are run and summarized:
 ```bash
 ./gradlew :sharedUI:jvmTest --console=plain
 ./gradlew :tournamentCli:test --console=plain
-./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 3 --seed 1 --format text" --console=plain
-./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 3 --seed 1 --format csv" --console=plain
-./scripts/run-tournament --bots default,defensive,example --rounds 3 --seed 1 --format text
-./scripts/run-tournament --bots default,defensive,example --rounds 3 --seed 1 --format csv
+./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format text" --console=plain
+./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format csv" --console=plain
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format text
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format csv
 ```
 
 If any target is intentionally deferred, document it here and in the phase table.
@@ -294,8 +295,8 @@ Result: passed. Full test run emitted existing Compose deprecation warnings.
 Wrapper smoke checks:
 
 ```bash
-./scripts/run-tournament --bots default,defensive --rounds 1 --format text --max-actions 1
-./scripts/run-tournament --bots default,defensive --rounds 1 --format csv --max-actions 1
+./scripts/run-tournament --bots target-leader,cautious --rounds 1 --format text --max-actions 1
+./scripts/run-tournament --bots target-leader,cautious --rounds 1 --format csv --max-actions 1
 ```
 
 Result: text report printed an integer `Seed:` value, and CSV report included the same kind of value in `tournament_seed`.
@@ -319,13 +320,13 @@ Updated `settings.gradle.kts` to include `:tournamentCli`.
 Result: passed.
 
 ```bash
-./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 3 --seed 1 --format text --max-actions 1000" --console=plain
+./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format text --max-actions 1000" --console=plain
 ```
 
 Result: passed and printed a plain text tournament report.
 
 ```bash
-./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 3 --seed 1 --format csv --max-actions 1000" --console=plain
+./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format csv --max-actions 1000" --console=plain
 ```
 
 Result: passed and printed combined score/round CSV.
@@ -349,14 +350,14 @@ Initial run produced the dist files but reported configuration-cache storage pro
 Wrapper validation:
 
 ```bash
-./scripts/run-tournament --bots default,defensive,example --rounds 1 --seed 1 --format text --max-actions 1000
-./scripts/run-tournament --bots default,defensive,example --rounds 1 --seed 1 --format text --max-actions 1000
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 1 --seed 1 --format text --max-actions 1000
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 1 --seed 1 --format text --max-actions 1000
 ```
 
 Result: first command rebuilt the CLI; second command printed `Tournament CLI unchanged; using existing build.`
 
 ```bash
-./scripts/run-tournament --bots default,defensive,example --rounds 3 --seed 1 --format csv --max-actions 1000 --out build/tmp/tournament-report.csv
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 3 --seed 1 --format csv --max-actions 1000 --out build/tmp/tournament-report.csv
 ```
 
 Result: wrapper reused existing build and wrote CSV output to `build/tmp/tournament-report.csv`.
@@ -399,18 +400,67 @@ Red/green cycles:
 Smoke-tested failed-round report:
 
 ```bash
-./scripts/run-tournament --bots default,defensive --rounds 1 --seed 42 --format text --max-actions 2 --log-failed-rounds
+./scripts/run-tournament --bots target-leader,cautious --rounds 1 --seed 42 --format text --max-actions 2 --log-failed-rounds
 ```
 
-Result: report included tournament seed `42`, round seed `1502463084`, seats `default,defensive`, max actions `2`, action-log count, and a copyable `./scripts/replay-round ...` command.
+Result: report included tournament seed `42`, round seed `1502463084`, seats `target-leader,cautious`, max actions `2`, action-log count, and a copyable `./scripts/replay-round ...` command.
 
 Smoke-tested replay:
 
 ```bash
-./scripts/replay-round --round-seed 1502463084 --seats default,defensive --max-actions 2 --steps 3
+./scripts/replay-round --round-seed 1502463084 --seats target-leader,cautious --max-actions 2 --last-steps 3
 ```
 
-Result: printed step-by-step replay and failed at the same max-action limit.
+Result: printed replay entries and failed at the same max-action limit.
+
+### 2026-05-04 - Bot naming cleanup
+
+Renamed bots in code, CLI IDs, tests, and docs:
+
+| Old class / ID | New class / ID |
+|---|---|
+| `DefaultAi` / `default` | `TargetTheLeader` / `target-leader` |
+| `DefensiveAi` / `defensive` | `CautiousBot` / `cautious` |
+| `ExampleAi` / `example` | `AlwaysAttackWhenStrongerBot` / `attack-when-stronger` |
+
+Validation:
+
+```bash
+./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain
+./gradlew test --console=plain
+./scripts/run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 1 --seed 1 --format text --max-actions 1000
+./scripts/replay-round --round-seed 1 --seats target-leader,cautious --max-actions 2 --last-steps 2
+```
+
+Result: tests and wrapper smoke checks passed. Full test run emitted existing Compose deprecation warnings.
+
+### 2026-05-04 - R7 implementation
+
+Red/green cycles:
+
+1. Added `RoundReplaySpecTextTest`.
+   - Red: unresolved `RoundReplaySpecText` and `RoundReplaySpecParser`.
+   - Green: added shared pasteable replay spec parser/formatter.
+2. Added `RoundActionDebugFormatterTest`.
+   - Red: unresolved `RoundActionDebugFormatter`.
+   - Green: added shared formatter with `Step` and `End` output.
+3. Updated report formatter tests to require `ROUND_REPLAY_SPEC` and `--last-steps 50`.
+   - Red: reports lacked spec block and last-step replay command.
+   - Green: updated plain text failed-round report formatting.
+4. Updated CLI tests to require `ReplayOptions.lastSteps`, reject removed flags, and print last-step replay output.
+   - Red: missing `lastSteps` and old replay behavior still used first `--steps` entries.
+   - Green: replay CLI now runs to terminal state, keeps a rolling last-N buffer, prints `End:`, and no longer supports/help-documents `--steps`, `--until-failed`, or `--until-complete`.
+
+Validation:
+
+```bash
+./gradlew :sharedUI:jvmTest :tournamentCli:test --console=plain
+./gradlew test --console=plain
+./scripts/run-tournament --bots target-leader,cautious --rounds 1 --seed 42 --format text --max-actions 2 --log-failed-rounds
+./scripts/replay-round --round-seed 1502463084 --seats target-leader,cautious --max-actions 5 --last-steps 2
+```
+
+Result: tests passed. Full test run emitted existing Compose deprecation warnings. Tournament report included `ROUND_REPLAY_SPEC` and a `--last-steps 50` replay command. Replay output printed only the final entries, including `End: round failed`.
 
 ### 2026-05-04 - T7
 

@@ -454,15 +454,15 @@ interface AiStrategy {
 Implement:
 
 ```kotlin
-ExampleAi
-DefaultAi
-DefensiveAi
+AlwaysAttackWhenStrongerBot
+TargetTheLeader
+CautiousBot
 ```
 
 Red tests:
 
 - AI never returns illegal moves.
-- `ExampleAi` attacks only weaker adjacent enemy areas.
+- `AlwaysAttackWhenStrongerBot` attacks only weaker adjacent enemy areas.
 - no valid moves returns `null`.
 
 Acceptance:

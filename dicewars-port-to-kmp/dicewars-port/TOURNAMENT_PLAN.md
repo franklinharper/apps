@@ -48,9 +48,9 @@ Initial built-in participant IDs:
 
 | ID | Strategy |
 |---|---|
-| `example` | `ExampleAi` |
-| `default` | `DefaultAi` |
-| `defensive` | `DefensiveAi` |
+| `attack-when-stronger` | `AlwaysAttackWhenStrongerBot` |
+| `target-leader` | `TargetTheLeader` |
+| `cautious` | `CautiousBot` |
 
 ## Round Lifecycle
 
@@ -219,9 +219,9 @@ Rounds failed: 2
 Seed: 42
 
 Scores:
-1. Defensive AI  522 pts  41 wins
-2. Default AI    486 pts  36 wins
-3. Example AI    129 pts  21 wins
+1. Cautious Bot  522 pts  41 wins
+2. Target The Leader    486 pts  36 wins
+3. Always Attack When Stronger Bot    129 pts  21 wins
 
 Failed rounds:
 - Round 17 exceeded maxActionsPerRound=100000
@@ -235,19 +235,19 @@ Machine-friendly output for spreadsheets and scripts.
 Score CSV example:
 
 ```csv
-section,tournament_seed,rank,bot_id,bot_name,score,wins,round,completed,winner,actions_taken,failure_reason
-score,42,1,defensive,Defensive AI,522,41,,,,,
-score,42,2,default,Default AI,486,36,,,,,
-score,42,3,example,Example AI,129,21,,,,,
+section,tournament_seed,round_seed,seats,max_actions,action_log_entries,rank,bot_id,bot_name,score,wins,round,completed,winner,actions_taken,failure_reason
+score,42,,,,,1,cautious,Cautious Bot,522,41,,,,,
+score,42,,,,,2,target-leader,Target The Leader,486,36,,,,,
+score,42,,,,,3,attack-when-stronger,Always Attack When Stronger Bot,129,21,,,,,
 ```
 
 Round CSV example:
 
 ```csv
-section,tournament_seed,rank,bot_id,bot_name,score,wins,round,completed,winner,actions_taken,failure_reason
-round,42,,,,,,1,true,defensive,918,
-round,42,,,,,,2,true,default,731,
-round,42,,,,,,17,false,,100000,max actions exceeded
+section,tournament_seed,round_seed,seats,max_actions,action_log_entries,rank,bot_id,bot_name,score,wins,round,completed,winner,actions_taken,failure_reason
+round,42,1502463084,"target-leader,cautious,attack-when-stronger",100000,0,,,,,,1,true,cautious,918,
+round,42,-12938422,"cautious,attack-when-stronger,target-leader",100000,0,,,,,,2,true,target-leader,731,
+round,42,92815594,"attack-when-stronger,target-leader,cautious",100000,100001,,,,,,17,false,,100000,max actions exceeded
 ```
 
 CSV is part of v1.
@@ -282,7 +282,7 @@ Reports should include a pasteable replay spec block that can be consumed by bot
 ```text
 ROUND_REPLAY_SPEC
 roundSeed=1502463084
-seats=default,defensive
+seats=target-leader,cautious
 maxActions=2
 lastSteps=50
 END_ROUND_REPLAY_SPEC
@@ -316,7 +316,7 @@ Replay command:
 ```bash
 ./scripts/replay-round \
   --round-seed 1502463084 \
-  --seats default,defensive \
+  --seats target-leader,cautious \
   --max-actions 2 \
   --last-steps 50
 ```
@@ -324,7 +324,7 @@ Replay command:
 Failed-round text reports include a copyable repro command:
 
 ```text
-./scripts/replay-round --round-seed 1502463084 --seats default,defensive --max-actions 2 --last-steps 50
+./scripts/replay-round --round-seed 1502463084 --seats target-leader,cautious --max-actions 2 --last-steps 50
 ```
 
 The replay CLI uses the same `BotRoundStepper` as the tournament runner, so replay and unattended tournament execution stay aligned.
@@ -355,8 +355,8 @@ No custom compatibility/help messages are needed for removed flags.
 Final replay entries use normal step labels for bot actions and `End:` for terminal entries:
 
 ```text
-Step 99999: default attacks 11 -> 12, fail, eliminated: none
-Step 100000: defensive ends turn, supplied: none, eliminated: none
+Step 99999: target-leader attacks 11 -> 12, fail, eliminated: none
+Step 100000: cautious ends turn, supplied: none, eliminated: none
 End: round failed, eliminated: none
 Failed: maxActionsPerRound=100000 exceeded
 ```
@@ -474,7 +474,7 @@ tournamentCli/
 Expected command:
 
 ```bash
-./gradlew :tournamentCli:run --args="--bots default,defensive,example --rounds 100 --seed 42 --format text"
+./gradlew :tournamentCli:run --args="--bots target-leader,cautious,attack-when-stronger --rounds 100 --seed 42 --format text"
 ```
 
 CLI options:
@@ -509,7 +509,7 @@ Target user command:
 
 ```bash
 ./scripts/run-tournament \
-  --bots default,defensive,example \
+  --bots target-leader,cautious,attack-when-stronger \
   --rounds 1000 \
   --seed 12345 \
   --format csv \

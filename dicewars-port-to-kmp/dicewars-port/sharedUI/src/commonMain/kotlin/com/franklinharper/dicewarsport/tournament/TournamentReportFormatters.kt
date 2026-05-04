@@ -30,8 +30,16 @@ object PlainTextTournamentReportFormatter : TournamentReportFormatter {
                 if (round.actionLog.isNotEmpty()) {
                     appendLine("  Action log entries: ${round.actionLog.size}")
                 }
+                val replaySpec = RoundReplaySpecText(
+                    roundSeed = round.roundSeed,
+                    seatIds = round.seatedParticipantIds,
+                    maxActions = round.maxActionsPerRound,
+                    lastSteps = 50,
+                )
+                appendLine("  Repro spec:")
+                RoundReplaySpecParser.format(replaySpec).lines().forEach { line -> appendLine("  $line") }
                 appendLine("  Repro:")
-                appendLine("    ./scripts/replay-round --round-seed ${round.roundSeed} --seats ${round.seatedParticipantIds.joinToString(",")} --max-actions ${round.maxActionsPerRound}")
+                appendLine("    ./scripts/replay-round --round-seed ${round.roundSeed} --seats ${round.seatedParticipantIds.joinToString(",")} --max-actions ${round.maxActionsPerRound} --last-steps 50")
             }
         }
     }.trimEnd() + "\n"

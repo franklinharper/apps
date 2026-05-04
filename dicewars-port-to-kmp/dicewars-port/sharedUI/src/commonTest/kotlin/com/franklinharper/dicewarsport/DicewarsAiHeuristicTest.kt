@@ -1,6 +1,6 @@
 package com.franklinharper.dicewarsport
 
-import com.franklinharper.dicewarsport.ai.DefaultAi
+import com.franklinharper.dicewarsport.ai.TargetTheLeader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -9,7 +9,7 @@ import kotlin.test.assertNull
 class DicewarsAiHeuristicTest {
 
     @Test
-    fun defaultAiTargetsDominantPlayerWhenOneExists() {
+    fun targetTheLeaderTargetsDominantPlayerWhenOneExists() {
         val game = aiGame(
             areas = mapOf(
                 1 to AreaData(size = 5, owner = 0, dice = 6, adjacentAreas = adj(2, 3)),
@@ -19,14 +19,14 @@ class DicewarsAiHeuristicTest {
             ),
         )
 
-        val move = DefaultAi(FixedRandom(0)).chooseMove(game)
+        val move = TargetTheLeader(FixedRandom(0)).chooseMove(game)
 
         assertNotNull(move)
         assertEquals(2, move.to, "player 1 has more than 40% of total dice and should be targeted")
     }
 
     @Test
-    fun defaultAiSkipsEqualDiceAttackWhenNeitherSideIsTopRankedAndRandomRollIsLow() {
+    fun targetTheLeaderSkipsEqualDiceAttackWhenNeitherSideIsTopRankedAndRandomRollIsLow() {
         val game = aiGame(
             areas = mapOf(
                 1 to AreaData(size = 5, owner = 0, dice = 3, adjacentAreas = adj(2)),
@@ -37,11 +37,11 @@ class DicewarsAiHeuristicTest {
             pmax = 4,
         )
 
-        assertNull(DefaultAi(FixedRandom(0)).chooseMove(game))
+        assertNull(TargetTheLeader(FixedRandom(0)).chooseMove(game))
     }
 
     @Test
-    fun defaultAiAllowsEqualDiceAttackWhenRandomRollIsHigh() {
+    fun targetTheLeaderAllowsEqualDiceAttackWhenRandomRollIsHigh() {
         val game = aiGame(
             areas = mapOf(
                 1 to AreaData(size = 5, owner = 0, dice = 3, adjacentAreas = adj(2)),
@@ -52,7 +52,7 @@ class DicewarsAiHeuristicTest {
             pmax = 4,
         )
 
-        val move = DefaultAi(FixedRandom(2, 0)).chooseMove(game)
+        val move = TargetTheLeader(FixedRandom(2, 0)).chooseMove(game)
 
         assertEquals(1, move?.from)
         assertEquals(2, move?.to)

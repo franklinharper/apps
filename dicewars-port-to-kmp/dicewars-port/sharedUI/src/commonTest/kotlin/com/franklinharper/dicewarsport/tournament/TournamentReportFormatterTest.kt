@@ -20,8 +20,14 @@ class TournamentReportFormatterTest {
         assertContains(text, "Round seed: 222")
         assertContains(text, "Seats: b,a")
         assertContains(text, "Max actions: 3")
-        assertContains(text, "./scripts/replay-round --round-seed 222 --seats b,a --max-actions 3")
+        assertContains(text, "./scripts/replay-round --round-seed 222 --seats b,a --max-actions 3 --last-steps 50")
         assertContains(text, "Action log entries: 1")
+        assertContains(text, "ROUND_REPLAY_SPEC")
+        assertContains(text, "roundSeed=222")
+        assertContains(text, "seats=b,a")
+        assertContains(text, "maxActions=3")
+        assertContains(text, "lastSteps=50")
+        assertContains(text, "END_ROUND_REPLAY_SPEC")
     }
 
     @Test

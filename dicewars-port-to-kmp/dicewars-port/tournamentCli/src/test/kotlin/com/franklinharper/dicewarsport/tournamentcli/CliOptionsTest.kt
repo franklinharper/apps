@@ -11,7 +11,7 @@ class CliOptionsTest {
     fun parsesRequiredAndOptionalArguments() {
         val options = CliOptions.parse(
             arrayOf(
-                "--bots", "default,defensive,example",
+                "--bots", "target-leader,cautious,attack-when-stronger",
                 "--rounds", "25",
                 "--seed", "42",
                 "--format", "csv",
@@ -20,7 +20,7 @@ class CliOptionsTest {
             ),
         )
 
-        assertEquals(listOf("default", "defensive", "example"), options.botIds)
+        assertEquals(listOf("target-leader", "cautious", "attack-when-stronger"), options.botIds)
         assertEquals(25, options.rounds)
         assertEquals(42, options.seed)
         assertEquals("csv", options.format)
@@ -30,9 +30,9 @@ class CliOptionsTest {
 
     @Test
     fun supportsEqualsStyleArguments() {
-        val options = CliOptions.parse(arrayOf("--bots=default,defensive", "--rounds=3"))
+        val options = CliOptions.parse(arrayOf("--bots=target-leader,cautious", "--rounds=3"))
 
-        assertEquals(listOf("default", "defensive"), options.botIds)
+        assertEquals(listOf("target-leader", "cautious"), options.botIds)
         assertEquals(3, options.rounds)
         assertEquals("text", options.format)
     }
@@ -40,7 +40,7 @@ class CliOptionsTest {
     @Test
     fun invalidArgumentsReturnUsefulErrors() {
         assertFailsWith<IllegalArgumentException> {
-            CliOptions.parse(arrayOf("--bots", "default", "--rounds", "0"))
+            CliOptions.parse(arrayOf("--bots", "target-leader", "--rounds", "0"))
         }
     }
 
@@ -51,7 +51,7 @@ class CliOptionsTest {
 
         val exitCode = runTournamentCli(
             args = arrayOf(
-                "--bots", "default,defensive",
+                "--bots", "target-leader,cautious",
                 "--rounds", "1",
                 "--seed", "1",
                 "--max-actions", "1",
@@ -68,15 +68,45 @@ class CliOptionsTest {
 
     @Test
     fun parsesActionLogFlags() {
-        val failedOnly = CliOptions.parse(arrayOf("--bots", "default,defensive", "--rounds", "1", "--log-failed-rounds"))
-        val allRounds = CliOptions.parse(arrayOf("--bots", "default,defensive", "--rounds", "1", "--log-all-rounds"))
+        val failedOnly = CliOptions.parse(arrayOf("--bots", "target-leader,cautious", "--rounds", "1", "--log-failed-rounds"))
+        val allRounds = CliOptions.parse(arrayOf("--bots", "target-leader,cautious", "--rounds", "1", "--log-all-rounds"))
 
         assertTrue(failedOnly.logFailedRounds)
         assertTrue(allRounds.logAllRounds)
     }
 
     @Test
-    fun replayRoundSubcommandPrintsStepByStepOutput() {
+    fun replayOptionsParseLastSteps() {
+        val options = ReplayOptions.parse(
+            arrayOf(
+                "--round-seed", "123",
+                "--seats", "target-leader,cautious",
+                "--max-actions", "100",
+                "--last-steps", "5",
+            ),
+        )
+
+        assertEquals(123, options.roundSeed)
+        assertEquals(listOf("target-leader", "cautious"), options.seatIds)
+        assertEquals(100, options.maxActions)
+        assertEquals(5, options.lastSteps)
+    }
+
+    @Test
+    fun replayOptionsRejectRemovedFlags() {
+        assertFailsWith<IllegalArgumentException> {
+            ReplayOptions.parse(arrayOf("--round-seed", "123", "--seats", "target-leader,cautious", "--steps", "5"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ReplayOptions.parse(arrayOf("--round-seed", "123", "--seats", "target-leader,cautious", "--until-failed"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ReplayOptions.parse(arrayOf("--round-seed", "123", "--seats", "target-leader,cautious", "--until-complete"))
+        }
+    }
+
+    @Test
+    fun replayRoundSubcommandPrintsLastStepsOutput() {
         val stdout = StringBuilder()
         val stderr = StringBuilder()
 
@@ -84,9 +114,9 @@ class CliOptionsTest {
             args = arrayOf(
                 "replay-round",
                 "--round-seed", "123",
-                "--seats", "default,defensive",
-                "--max-actions", "2",
-                "--steps", "2",
+                "--seats", "target-leader,cautious",
+                "--max-actions", "5",
+                "--last-steps", "2",
             ),
             stdout = { stdout.append(it) },
             stderr = { stderr.appendLine(it) },
@@ -95,8 +125,9 @@ class CliOptionsTest {
         assertEquals(0, exitCode, stderr.toString())
         assertContains(stdout.toString(), "Round replay")
         assertContains(stdout.toString(), "Round seed: 123")
-        assertContains(stdout.toString(), "Seats: default,defensive")
-        assertContains(stdout.toString(), "Step 1:")
+        assertContains(stdout.toString(), "Seats: target-leader,cautious")
+        assertContains(stdout.toString(), "End:")
+        assertTrue(!stdout.toString().contains("Step 1:"), stdout.toString())
     }
 
     @Test
@@ -105,7 +136,7 @@ class CliOptionsTest {
 
         val exitCode = runTournamentCli(
             args = arrayOf(
-                "--bots", "default,defensive",
+                "--bots", "target-leader,cautious",
                 "--rounds", "1",
                 "--max-actions", "1",
                 "--format", "text",
@@ -124,7 +155,7 @@ class CliOptionsTest {
         val stderr = StringBuilder()
 
         val exitCode = runTournamentCli(
-            args = arrayOf("--bots", "default,nope", "--rounds", "1"),
+            args = arrayOf("--bots", "target-leader,nope", "--rounds", "1"),
             stdout = {},
             stderr = { stderr.appendLine(it) },
         )

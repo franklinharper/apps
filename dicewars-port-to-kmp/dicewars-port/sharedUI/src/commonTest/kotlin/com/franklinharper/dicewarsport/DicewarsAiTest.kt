@@ -1,8 +1,8 @@
 package com.franklinharper.dicewarsport
 
-import com.franklinharper.dicewarsport.ai.DefaultAi
-import com.franklinharper.dicewarsport.ai.DefensiveAi
-import com.franklinharper.dicewarsport.ai.ExampleAi
+import com.franklinharper.dicewarsport.ai.AlwaysAttackWhenStrongerBot
+import com.franklinharper.dicewarsport.ai.CautiousBot
+import com.franklinharper.dicewarsport.ai.TargetTheLeader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -13,7 +13,7 @@ class DicewarsAiTest {
 
     @Test
     fun aiStrategiesNeverReturnIllegalMoves() {
-        val strategies = listOf(ExampleAi(FixedAiRandom(0)), DefaultAi(FixedAiRandom(0)), DefensiveAi())
+        val strategies = listOf(AlwaysAttackWhenStrongerBot(FixedAiRandom(0)), TargetTheLeader(FixedAiRandom(0)), CautiousBot())
         for (strategy in strategies) {
             val game = aiGame()
             val move = strategy.chooseMove(game)
@@ -23,14 +23,14 @@ class DicewarsAiTest {
     }
 
     @Test
-    fun exampleAiAttacksOnlyWeakerAdjacentEnemyAreas() {
+    fun alwaysAttackWhenStrongerBotAttacksOnlyWeakerAdjacentEnemyAreas() {
         val game = aiGame().copy(
             areas = aiGame().areas.toMutableList().also {
                 it[2] = it[2].copy(dice = it[1].dice)
             },
         )
 
-        val move = ExampleAi(FixedAiRandom(0)).chooseMove(game)
+        val move = AlwaysAttackWhenStrongerBot(FixedAiRandom(0)).chooseMove(game)
 
         assertNotNull(move)
         assertEquals(3, move.to)
@@ -46,9 +46,9 @@ class DicewarsAiTest {
             },
         )
 
-        assertNull(ExampleAi(FixedAiRandom(0)).chooseMove(game))
-        assertNull(DefaultAi(FixedAiRandom(0)).chooseMove(game))
-        assertNull(DefensiveAi().chooseMove(game))
+        assertNull(AlwaysAttackWhenStrongerBot(FixedAiRandom(0)).chooseMove(game))
+        assertNull(TargetTheLeader(FixedAiRandom(0)).chooseMove(game))
+        assertNull(CautiousBot().chooseMove(game))
     }
 }
 

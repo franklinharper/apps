@@ -1,29 +1,36 @@
 package com.franklinharper.dicewarsport.tournament
 
-import com.franklinharper.dicewarsport.ai.DefaultAi
-import com.franklinharper.dicewarsport.ai.DefensiveAi
-import com.franklinharper.dicewarsport.ai.ExampleAi
+import com.franklinharper.dicewarsport.ai.AlwaysAttackWhenStrongerBot
+import com.franklinharper.dicewarsport.ai.CautiousBot
+import com.franklinharper.dicewarsport.ai.StrategicBot
+import com.franklinharper.dicewarsport.ai.TargetTheLeader
 
 object BuiltInTournamentParticipants {
-    val example = TournamentParticipant(
-        id = "example",
-        displayName = "Example AI",
-        aiFactory = { random -> ExampleAi(random) },
+    val attackWhenStronger = TournamentParticipant(
+        id = "attack-when-stronger",
+        displayName = "Always Attack When Stronger Bot",
+        aiFactory = { random -> AlwaysAttackWhenStrongerBot(random) },
     )
 
-    val default = TournamentParticipant(
-        id = "default",
-        displayName = "Default AI",
-        aiFactory = { random -> DefaultAi(random) },
+    val targetLeader = TournamentParticipant(
+        id = "target-leader",
+        displayName = "Target The Leader",
+        aiFactory = { random -> TargetTheLeader(random) },
     )
 
-    val defensive = TournamentParticipant(
-        id = "defensive",
-        displayName = "Defensive AI",
-        aiFactory = { DefensiveAi() },
+    val cautious = TournamentParticipant(
+        id = "cautious",
+        displayName = "Cautious Bot",
+        aiFactory = { CautiousBot() },
     )
 
-    val all: List<TournamentParticipant> = listOf(default, defensive, example)
+    val strategic = TournamentParticipant(
+        id = "strategic",
+        displayName = "Strategic Bot",
+        aiFactory = { random -> StrategicBot(random) },
+    )
+
+    val all: List<TournamentParticipant> = listOf(targetLeader, cautious, attackWhenStronger, strategic)
 
     val byId: Map<String, TournamentParticipant> = all.associateBy { it.id }
 }

@@ -1,7 +1,7 @@
 package com.franklinharper.dicewarsport
 
 import com.franklinharper.dicewarsport.ai.AiStrategy
-import com.franklinharper.dicewarsport.ai.DefaultAi
+import com.franklinharper.dicewarsport.ai.TargetTheLeader
 
 class GameReducer(
     private val random: RandomSource,
@@ -105,7 +105,7 @@ class GameReducer(
     private fun onAiStep(state: GameUiState): Result {
         if (state.screen != DicewarsScreen.AiTurn) return Result(state)
         val player = state.game.currentPlayer()
-        val strategy = aiStrategies[player] ?: DefaultAi(random)
+        val strategy = aiStrategies[player] ?: TargetTheLeader(random)
         val move = strategy.chooseMove(state.game) ?: return onTurnFinished(state)
         if (!state.game.isLegalAttack(move.from, move.to, player)) return onTurnFinished(state)
 

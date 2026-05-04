@@ -2,15 +2,26 @@ package com.franklinharper.dicewarsport.tournamentcli
 
 import com.franklinharper.dicewarsport.tournament.BuiltInTournamentParticipants
 import com.franklinharper.dicewarsport.tournament.CsvTournamentReportFormatter
+import com.franklinharper.dicewarsport.tournament.BotGameRunner
 import com.franklinharper.dicewarsport.tournament.BotRoundStepper
 import com.franklinharper.dicewarsport.tournament.PlainTextTournamentReportFormatter
+import com.franklinharper.dicewarsport.tournament.RoundActionDebugFormatter
 import com.franklinharper.dicewarsport.tournament.RoundActionLogEntry
 import com.franklinharper.dicewarsport.tournament.RoundActionType
+import com.franklinharper.dicewarsport.tournament.RoundConfig
 import com.franklinharper.dicewarsport.tournament.RoundReplaySpec
+import com.franklinharper.dicewarsport.tournament.RoundResult
+import com.franklinharper.dicewarsport.tournament.RoundRunner
 import com.franklinharper.dicewarsport.tournament.TournamentConfig
 import com.franklinharper.dicewarsport.tournament.TournamentReportFormatter
+import com.franklinharper.dicewarsport.tournament.TournamentResult
 import com.franklinharper.dicewarsport.tournament.TournamentRunner
+import com.franklinharper.dicewarsport.tournament.aggregateBotScores
+import com.franklinharper.dicewarsport.tournament.deriveRoundSeed
+import com.franklinharper.dicewarsport.tournament.rotatedLeft
 import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -60,16 +71,30 @@ fun runTournamentCli(
         return 2
     }
 
-    val result = TournamentRunner().run(
-        TournamentConfig(
-            participants = participants,
-            rounds = options.rounds,
-            seed = options.seed,
-            maxActionsPerRound = options.maxActions,
-            logFailedRounds = options.logFailedRounds,
-            logAllRounds = options.logAllRounds,
-        ),
-    )
+    val result = if (options.parallel != null && options.parallel > 1) {
+        ParallelTournamentRunner().run(
+            TournamentConfig(
+                participants = participants,
+                rounds = options.rounds,
+                seed = options.seed,
+                maxActionsPerRound = options.maxActions,
+                logFailedRounds = options.logFailedRounds,
+                logAllRounds = options.logAllRounds,
+            ),
+            parallelism = options.parallel,
+        )
+    } else {
+        TournamentRunner().run(
+            TournamentConfig(
+                participants = participants,
+                rounds = options.rounds,
+                seed = options.seed,
+                maxActionsPerRound = options.maxActions,
+                logFailedRounds = options.logFailedRounds,
+                logAllRounds = options.logAllRounds,
+            ),
+        )
+    }
     val report = formatter.format(result)
 
     if (options.outPath == null) {
@@ -91,6 +116,7 @@ data class CliOptions(
     val format: String,
     val outPath: String?,
     val maxActions: Int,
+    val parallel: Int?,
     val logFailedRounds: Boolean = false,
     val logAllRounds: Boolean = false,
     val help: Boolean = false,
@@ -105,6 +131,7 @@ data class CliOptions(
                     format = "text",
                     outPath = null,
                     maxActions = 100_000,
+                    parallel = null,
                     help = true,
                 )
             }
@@ -124,6 +151,10 @@ data class CliOptions(
             val maxActions = values["max-actions"]?.toIntOrNull() ?: 100_000
             require(maxActions > 0) { "--max-actions must be greater than zero" }
 
+            val parallel = values["parallel"]?.toIntOrNull()
+                ?: values["parallel"]?.let { throw IllegalArgumentException("--parallel must be an integer") }
+            if (parallel != null) require(parallel > 0) { "--parallel must be greater than zero" }
+
             val seed = values["seed"]?.toIntOrNull()
                 ?: values["seed"]?.let { throw IllegalArgumentException("--seed must be an integer") }
 
@@ -134,6 +165,7 @@ data class CliOptions(
                 format = values["format"] ?: "text",
                 outPath = values["out"],
                 maxActions = maxActions,
+                parallel = parallel,
                 logFailedRounds = values["log-failed-rounds"] == "true",
                 logAllRounds = values["log-all-rounds"] == "true",
             )
@@ -199,18 +231,34 @@ private fun runReplayRoundCli(
         ),
     )
 
+    val replayEntries = ArrayDeque<RoundActionLogEntry>()
+    fun addReplayEntry(entry: RoundActionLogEntry) {
+        replayEntries.addLast(entry)
+        while (replayEntries.size > options.lastSteps) replayEntries.removeFirst()
+    }
+
+    while (true) {
+        val step = stepper.step(state)
+        state = step.state
+        addReplayEntry(step.actionLogEntry)
+        if (step.actionLogEntry.actionType.isEndEntry()) break
+        if (state.completed || state.failed) {
+            val terminalStep = stepper.step(state)
+            state = terminalStep.state
+            addReplayEntry(terminalStep.actionLogEntry)
+            break
+        }
+    }
+
     val output = buildString {
         appendLine("Round replay")
         appendLine("Round seed: ${options.roundSeed}")
         appendLine("Seats: ${options.seatIds.joinToString(",")}")
         appendLine("Max actions: ${options.maxActions}")
+        appendLine("Last steps: ${options.lastSteps}")
         appendLine()
 
-        while (!state.completed && !state.failed && shouldContinueReplay(state.actionsTaken, options)) {
-            val step = stepper.step(state)
-            state = step.state
-            appendLine(formatReplayStep(step.actionLogEntry))
-        }
+        replayEntries.forEach { entry -> appendLine(RoundActionDebugFormatter.format(entry)) }
 
         if (state.completed) appendLine("Completed: winner=${state.winnerParticipantId}")
         if (state.failed) appendLine("Failed: ${state.failureReason}")
@@ -223,9 +271,7 @@ data class ReplayOptions(
     val roundSeed: Int,
     val seatIds: List<String>,
     val maxActions: Int,
-    val steps: Int,
-    val untilFailed: Boolean,
-    val untilComplete: Boolean,
+    val lastSteps: Int,
 ) {
     companion object {
         fun parse(args: Array<String>): ReplayOptions {
@@ -240,15 +286,16 @@ data class ReplayOptions(
             require(seatIds.size >= 2) { "At least two seats are required" }
             val maxActions = values["max-actions"]?.toIntOrNull() ?: 100_000
             require(maxActions > 0) { "--max-actions must be greater than zero" }
-            val steps = values["steps"]?.toIntOrNull() ?: 20
-            require(steps > 0) { "--steps must be greater than zero" }
+            val allowedKeys = setOf("round-seed", "seats", "max-actions", "last-steps")
+            val unknownKeys = values.keys - allowedKeys
+            require(unknownKeys.isEmpty()) { "Unexpected option '--${unknownKeys.first()}'" }
+            val lastSteps = values["last-steps"]?.toIntOrNull() ?: 50
+            require(lastSteps > 0) { "--last-steps must be greater than zero" }
             return ReplayOptions(
                 roundSeed = roundSeed,
                 seatIds = seatIds,
                 maxActions = maxActions,
-                steps = steps,
-                untilFailed = values["until-failed"] == "true",
-                untilComplete = values["until-complete"] == "true",
+                lastSteps = lastSteps,
             )
         }
 
@@ -259,10 +306,7 @@ data class ReplayOptions(
                 val arg = args[index]
                 require(arg.startsWith("--")) { "Unexpected argument '$arg'" }
                 val body = arg.removePrefix("--")
-                if (body in setOf("until-failed", "until-complete")) {
-                    values[body] = "true"
-                    index++
-                } else if ('=' in body) {
+                if ('=' in body) {
                     values[body.substringBefore('=')] = body.substringAfter('=')
                     index++
                 } else {
@@ -278,20 +322,57 @@ data class ReplayOptions(
     }
 }
 
-private fun shouldContinueReplay(actionsTaken: Int, options: ReplayOptions): Boolean =
-    options.untilFailed || options.untilComplete || actionsTaken < options.steps
+class ParallelTournamentRunner(
+    private val roundRunner: RoundRunner = BotGameRunner(),
+) {
+    fun run(config: TournamentConfig, parallelism: Int): TournamentResult {
+        val effectiveSeed = config.seed ?: java.util.Random().nextInt()
+        val executor = Executors.newFixedThreadPool(parallelism)
 
-private fun formatReplayStep(entry: RoundActionLogEntry): String {
-    val detail = when (entry.actionType) {
-        RoundActionType.Attack -> "${entry.participantId} attacks ${entry.from} -> ${entry.to}, ${if (entry.battleRoll?.success == true) "success" else "fail"}"
-        RoundActionType.IllegalMove -> "${entry.participantId} illegal move ${entry.from} -> ${entry.to}; ends turn"
-        RoundActionType.EndTurn -> "${entry.participantId} ends turn, supplied: ${entry.suppliedAreas.joinToString(",").ifBlank { "none" }}"
-        RoundActionType.RoundFailed -> "round failed"
-        RoundActionType.RoundWon -> "round won by ${entry.participantId}"
+        try {
+            // Build all round configs upfront (deterministic, no shared state)
+            val roundConfigs = (1..config.rounds).map { roundNumber ->
+                val seated = config.participants.rotatedLeft((roundNumber - 1) % config.participants.size)
+                RoundConfig(
+                    roundNumber = roundNumber,
+                    participants = seated,
+                    roundSeed = deriveRoundSeed(effectiveSeed, roundNumber),
+                    maxActionsPerRound = config.maxActionsPerRound,
+                    logActions = config.logAllRounds,
+                )
+            }
+
+            // Submit all rounds to the pool
+            val futures: List<Future<RoundResult>> = roundConfigs.map { rc ->
+                executor.submit<RoundResult> {
+                    val initial = roundRunner.runRound(rc)
+                    if (config.logFailedRounds && !config.logAllRounds && !initial.completed) {
+                        roundRunner.runRound(rc.copy(logActions = true))
+                    } else {
+                        initial
+                    }
+                }
+            }
+
+            // Collect results in order
+            val roundResults = futures.map { it.get() }
+
+            return TournamentResult(
+                roundsRequested = config.rounds,
+                roundsCompleted = roundResults.count { it.completed },
+                roundsFailed = roundResults.count { !it.completed },
+                seed = effectiveSeed,
+                botScores = aggregateBotScores(config.participants, roundResults),
+                roundResults = roundResults,
+            )
+        } finally {
+            executor.shutdown()
+        }
     }
-    val eliminated = entry.eliminatedParticipantIds.joinToString(",").ifBlank { "none" }
-    return "Step ${entry.actionNumber}: $detail, eliminated: $eliminated"
 }
+
+private fun RoundActionType.isEndEntry(): Boolean =
+    this == RoundActionType.RoundFailed || this == RoundActionType.RoundWon
 
 private fun formatterFor(format: String): TournamentReportFormatter = when (format.lowercase()) {
     "text", "plain" -> PlainTextTournamentReportFormatter
@@ -303,7 +384,7 @@ private fun usage(): String = """
 Dicewars bot tournament
 
 Usage:
-  run-tournament --bots default,defensive,example --rounds 100 [options]
+  run-tournament --bots target-leader,cautious,attack-when-stronger --rounds 100 [options]
 
 Options:
   --bots <ids>          Comma-separated bot IDs. Available: ${BuiltInTournamentParticipants.byId.keys.sorted().joinToString(",")}
@@ -312,25 +393,24 @@ Options:
   --format <text|csv>   Output format. Default: text.
   --out <path>          Optional output path. Defaults to stdout.
   --max-actions <int>   Max actions per round. Default: 100000.
+  --parallel <int>      Number of rounds to run concurrently. Default: 1 (sequential).
   --log-failed-rounds   Capture action logs for failed rounds by rerunning failed rounds with the same round seed.
   --log-all-rounds      Capture action logs for every round.
   --help, -h            Show this help.
 
 Replay:
-  run-tournament replay-round --round-seed 123 --seats default,defensive --max-actions 100000 --steps 50
+  run-tournament replay-round --round-seed 123 --seats target-leader,cautious --max-actions 100000 --last-steps 50
 """.trimIndent()
 
 private fun replayUsage(): String = """
 Dicewars round replay
 
 Usage:
-  replay-round --round-seed <int> --seats default,defensive,example [options]
+  replay-round --round-seed <int> --seats target-leader,cautious,attack-when-stronger [options]
 
 Options:
   --round-seed <int>    Required round seed from a tournament report.
   --seats <ids>         Required comma-separated bot IDs in seated order.
   --max-actions <int>   Max actions for the round. Default: 100000.
-  --steps <int>         Number of steps to print. Default: 20.
-  --until-failed        Continue until the round fails or otherwise terminates.
-  --until-complete      Continue until the round completes or otherwise terminates.
+  --last-steps <int>    Number of final replay entries to print. Default: 50.
 """.trimIndent()
