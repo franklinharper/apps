@@ -260,7 +260,7 @@ fun WinScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffo
     onGoToDebug = { onAction(GameAction.GoToDebug) },
 ) {
     AnimatedTrophy(modifier = Modifier.weight(1f).fillMaxWidth())
-    Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
+    Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("New Game") }
 }
 
 @Composable
