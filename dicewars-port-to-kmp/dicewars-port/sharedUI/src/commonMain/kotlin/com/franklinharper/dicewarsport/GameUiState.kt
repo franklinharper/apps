@@ -227,6 +227,12 @@ class GameReducer(
             DicewarsScreen.HumanTurn, DicewarsScreen.AiTurn,
         )
         val game = if (needsGame) DicewarsGame.generate(state.selectedPlayerCount, random) else state.game
-        return Result(state.copy(screen = targetScreen, game = game, selectedFrom = null, selectedTo = null))
+        val sounds = when (targetScreen) {
+            DicewarsScreen.Win -> listOf(SoundEvent.WIN)
+            DicewarsScreen.GameOver -> listOf(SoundEvent.GAME_OVER)
+            DicewarsScreen.HumanTurn -> listOf(SoundEvent.MY_TURN)
+            else -> emptyList()
+        }
+        return Result(state.copy(screen = targetScreen, game = game, selectedFrom = null, selectedTo = null), sounds)
     }
 }

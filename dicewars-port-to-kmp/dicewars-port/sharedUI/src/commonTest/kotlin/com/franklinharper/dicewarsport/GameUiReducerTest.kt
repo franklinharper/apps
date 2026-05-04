@@ -153,6 +153,7 @@ class GameUiReducerTest {
             GameAction.ShowDebugScreen(DicewarsScreen.Win),
         )
         assertEquals(DicewarsScreen.Win, result.state.screen)
+        assertEquals(listOf(SoundEvent.WIN), result.soundEvents)
     }
 
     @Test
