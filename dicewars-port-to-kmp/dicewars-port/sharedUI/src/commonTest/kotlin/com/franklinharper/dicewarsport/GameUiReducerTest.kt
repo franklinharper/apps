@@ -9,27 +9,28 @@ class GameUiReducerTest {
 
     @Test
     fun loadingTransitionsToTitle() {
-        val state = reducer().reduce(initialUiState(), GameAction.LoadingFinished)
+        val result = reducer().reduce(initialUiState(), GameAction.LoadingFinished)
 
-        assertEquals(DicewarsScreen.Title, state.screen)
+        assertEquals(DicewarsScreen.Title, result.state.screen)
     }
 
     @Test
     fun titleTransitionsToMapPreview() {
-        val state = reducer().reduce(initialUiState(screen = DicewarsScreen.Title), GameAction.StartPressed)
+        val result = reducer().reduce(initialUiState(screen = DicewarsScreen.Title), GameAction.StartPressed)
 
-        assertEquals(DicewarsScreen.MapPreview, state.screen)
+        assertEquals(DicewarsScreen.MapPreview, result.state.screen)
     }
 
     @Test
     fun selectedPlayerCountIsUsedWhenGameStarts() {
         val reducer = reducer()
         val selected = reducer.reduce(initialUiState(screen = DicewarsScreen.Title), GameAction.SelectPlayerCount(4))
-        val started = reducer.reduce(selected, GameAction.StartPressed)
+        val started = reducer.reduce(selected.state, GameAction.StartPressed)
 
-        assertEquals(4, selected.selectedPlayerCount)
-        assertEquals(4, started.game.pmax)
-        assertEquals(DicewarsScreen.MapPreview, started.screen)
+        assertEquals(4, selected.state.selectedPlayerCount)
+        assertEquals(4, started.state.game.pmax)
+        assertEquals(DicewarsScreen.MapPreview, started.state.screen)
+        assertEquals(listOf(SoundEvent.BUTTON), selected.soundEvents)
     }
 
     @Test
@@ -37,33 +38,38 @@ class GameUiReducerTest {
         val human = reducer().reduce(previewState(user = 0, currentPlayer = 0), GameAction.AcceptMap)
         val ai = reducer().reduce(previewState(user = 0, currentPlayer = 1), GameAction.AcceptMap)
 
-        assertEquals(DicewarsScreen.HumanTurn, human.screen)
-        assertEquals(DicewarsScreen.AiTurn, ai.screen)
+        assertEquals(DicewarsScreen.HumanTurn, human.state.screen)
+        assertEquals(DicewarsScreen.AiTurn, ai.state.screen)
+        assertEquals(listOf(SoundEvent.MY_TURN), human.soundEvents)
+        assertEquals(emptyList<SoundEvent>(), ai.soundEvents)
     }
 
     @Test
     fun humanTurnResolvesAttackAndStaysOnTurnAfterTwoLegalClicks() {
         val reducer = reducer()
         val selected = reducer.reduce(turnState(DicewarsScreen.HumanTurn), GameAction.TerritoryClicked(1))
-        val next = reducer.reduce(selected, GameAction.TerritoryClicked(2))
+        val next = reducer.reduce(selected.state, GameAction.TerritoryClicked(2))
 
-        assertEquals(DicewarsScreen.HumanTurn, next.screen)
-        assertEquals(null, next.selectedFrom)
-        assertEquals(null, next.selectedTo)
-        assertEquals(0, next.game.areas[2].owner)
-        assertEquals(3, next.game.areas[2].dice)
-        assertEquals(1, next.game.areas[1].dice)
-        assertEquals(2, next.game.players[0].maxConnectedAreaCount)
-        assertEquals(1, next.game.players[1].maxConnectedAreaCount)
+        assertEquals(DicewarsScreen.HumanTurn, next.state.screen)
+        assertEquals(null, next.state.selectedFrom)
+        assertEquals(null, next.state.selectedTo)
+        assertEquals(0, next.state.game.areas[2].owner)
+        assertEquals(3, next.state.game.areas[2].dice)
+        assertEquals(1, next.state.game.areas[1].dice)
+        assertEquals(2, next.state.game.players[0].maxConnectedAreaCount)
+        assertEquals(1, next.state.game.players[1].maxConnectedAreaCount)
+        assertEquals(listOf(SoundEvent.CLICK), selected.soundEvents)
+        assertTrue(next.soundEvents.contains(SoundEvent.DICE))
+        assertTrue(next.soundEvents.contains(SoundEvent.SUCCESS))
     }
 
     @Test
     fun humanTurnReceivesReinforcementsAndAdvancesToNextPlayerOnEndTurn() {
-        val state = reducer().reduce(turnState(DicewarsScreen.HumanTurn), GameAction.EndTurn)
+        val result = reducer().reduce(turnState(DicewarsScreen.HumanTurn), GameAction.EndTurn)
 
-        assertEquals(DicewarsScreen.AiTurn, state.screen)
-        assertEquals(1, state.game.currentPlayer())
-        assertEquals(5, state.game.areas[1].dice)
+        assertEquals(DicewarsScreen.AiTurn, result.state.screen)
+        assertEquals(1, result.state.game.currentPlayer())
+        assertEquals(5, result.state.game.areas[1].dice)
     }
 
     @Test
@@ -71,9 +77,9 @@ class GameUiReducerTest {
         val next = reducer(ai = FixedMoveAi(Move(2, 1))).reduce(turnState(DicewarsScreen.AiTurn, currentPlayer = 1), GameAction.AiStep)
         val finished = reducer(ai = FixedMoveAi(null)).reduce(turnState(DicewarsScreen.AiTurn, currentPlayer = 1), GameAction.AiStep)
 
-        assertEquals(DicewarsScreen.AiTurn, next.screen)
-        assertEquals(DicewarsScreen.HumanTurn, finished.screen)
-        assertEquals(0, finished.game.currentPlayer())
+        assertEquals(DicewarsScreen.AiTurn, next.state.screen)
+        assertEquals(DicewarsScreen.HumanTurn, finished.state.screen)
+        assertEquals(0, finished.state.game.currentPlayer())
     }
 
     @Test
@@ -86,7 +92,8 @@ class GameUiReducerTest {
             GameUiState(screen = DicewarsScreen.AiTurn, game = gameOverGame),
             GameAction.AiStep,
         )
-        assertEquals(DicewarsScreen.GameOver, gameOver.screen)
+        assertEquals(DicewarsScreen.GameOver, gameOver.state.screen)
+        assertTrue(gameOver.soundEvents.contains(SoundEvent.GAME_OVER))
 
         val winGame = uiGame(areas = mapOf(
             1 to AreaData(size = 5, owner = 0, dice = 4, adjacentAreas = adj(2)),
@@ -94,10 +101,11 @@ class GameUiReducerTest {
             3 to AreaData(size = 5, owner = 0, dice = 1, adjacentAreas = adj(2)),
         ))
         val win = reducer().reduce(
-            reducer().reduce(GameUiState(screen = DicewarsScreen.HumanTurn, game = winGame), GameAction.TerritoryClicked(1)),
+            reducer().reduce(GameUiState(screen = DicewarsScreen.HumanTurn, game = winGame), GameAction.TerritoryClicked(1)).state,
             GameAction.TerritoryClicked(2),
         )
-        assertEquals(DicewarsScreen.Win, win.screen)
+        assertEquals(DicewarsScreen.Win, win.state.screen)
+        assertTrue(win.soundEvents.contains(SoundEvent.WIN))
     }
 
     @Test
@@ -105,16 +113,16 @@ class GameUiReducerTest {
         val fromWin = reducer().reduce(initialUiState(screen = DicewarsScreen.Win), GameAction.BackToTitle)
         val fromGameOver = reducer().reduce(initialUiState(screen = DicewarsScreen.GameOver), GameAction.BackToTitle)
 
-        assertEquals(DicewarsScreen.Title, fromWin.screen)
-        assertEquals(DicewarsScreen.Title, fromGameOver.screen)
+        assertEquals(DicewarsScreen.Title, fromWin.state.screen)
+        assertEquals(DicewarsScreen.Title, fromGameOver.state.screen)
     }
 
     @Test
     fun spectateModeReusesExistingScreensAndDoesNotAddEleventhScreen() {
-        val state = reducer().reduce(initialUiState(screen = DicewarsScreen.Title), GameAction.StartSpectate)
+        val result = reducer().reduce(initialUiState(screen = DicewarsScreen.Title), GameAction.StartSpectate)
 
-        assertTrue(state.spectateMode)
-        assertEquals(DicewarsScreen.MapPreview, state.screen)
+        assertTrue(result.state.spectateMode)
+        assertEquals(DicewarsScreen.MapPreview, result.state.screen)
     }
 }
 

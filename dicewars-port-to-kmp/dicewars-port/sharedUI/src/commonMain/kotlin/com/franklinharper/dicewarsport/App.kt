@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -36,6 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -48,6 +53,7 @@ import kotlin.random.Random
 @Composable
 fun App(
     onThemeChanged: @Composable (isDark: Boolean) -> Unit = {},
+    soundPlayer: SoundPlayer = NoOpSoundPlayer(),
 ) = AppTheme(onThemeChanged) {
     val random = remember { KotlinRandomSource() }
     val reducer = remember { GameReducer(random) }
@@ -57,7 +63,13 @@ fun App(
 
     DicewarsApp(
         state = state,
-        onAction = { action -> state = reducer.reduce(state, action) },
+        onAction = { action ->
+            val result = reducer.reduce(state, action)
+            state = result.state
+            if (state.soundEnabled) {
+                result.soundEvents.forEach { soundPlayer.play(it) }
+            }
+        },
     )
 }
 
@@ -72,8 +84,8 @@ fun DicewarsApp(
         DicewarsScreen.MapPreview -> MapPreviewScreen(state, onAction)
         DicewarsScreen.HumanTurn -> GameBoardScreen(state, onAction, title = "Your turn")
         DicewarsScreen.AiTurn -> GameBoardScreen(state, onAction, title = "AI turn")
-        DicewarsScreen.GameOver -> GameOverScreen(onAction)
-        DicewarsScreen.Win -> WinScreen(onAction)
+        DicewarsScreen.GameOver -> GameOverScreen(state, onAction)
+        DicewarsScreen.Win -> WinScreen(state, onAction)
     }
 }
 
@@ -134,7 +146,10 @@ fun TitleScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaf
 fun MapPreviewScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
     title = "Play this board?",
     showBackButton = true,
+    showSoundToggle = true,
+    soundEnabled = state.soundEnabled,
     onBack = { onAction(GameAction.BackToTitle) },
+    onToggleSound = { onAction(GameAction.ToggleSound) },
 ) {
     Board(state, onAction)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -147,7 +162,10 @@ fun MapPreviewScreen(state: GameUiState, onAction: (GameAction) -> Unit) = Scree
 fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: String) = ScreenScaffold(
     title = title,
     showBackButton = true,
+    showSoundToggle = true,
+    soundEnabled = state.soundEnabled,
     onBack = { onAction(GameAction.BackToTitle) },
+    onToggleSound = { onAction(GameAction.ToggleSound) },
 ) {
     Board(state, onAction)
     Text(
@@ -188,19 +206,25 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
 }
 
 @Composable
-fun GameOverScreen(onAction: (GameAction) -> Unit) = ScreenScaffold(
+fun GameOverScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
     title = "Game Over",
     showBackButton = true,
+    showSoundToggle = true,
+    soundEnabled = state.soundEnabled,
     onBack = { onAction(GameAction.BackToTitle) },
+    onToggleSound = { onAction(GameAction.ToggleSound) },
 ) {
     Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
 }
 
 @Composable
-fun WinScreen(onAction: (GameAction) -> Unit) = ScreenScaffold(
+fun WinScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenScaffold(
     title = "You Win",
     showBackButton = true,
+    showSoundToggle = true,
+    soundEnabled = state.soundEnabled,
     onBack = { onAction(GameAction.BackToTitle) },
+    onToggleSound = { onAction(GameAction.ToggleSound) },
 ) {
     Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
 }
@@ -266,12 +290,18 @@ private fun PlayerStatusBar(game: DicewarsGame) {
 private fun ScreenScaffold(
     title: String,
     showBackButton: Boolean = false,
+    showSoundToggle: Boolean = false,
+    soundEnabled: Boolean = true,
     onBack: (() -> Unit)? = null,
+    onToggleSound: (() -> Unit)? = null,
     content: ColumnScopeContent,
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -294,6 +324,18 @@ private fun ScreenScaffold(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center),
                 )
+                if (showSoundToggle && onToggleSound != null) {
+                    IconButton(
+                        onClick = onToggleSound,
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                    ) {
+                        Icon(
+                            imageVector = if (soundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                            contentDescription = if (soundEnabled) "Sound on" else "Sound off",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
             }
             content()
         }

@@ -11,13 +11,28 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowInsetsControllerCompat
 import com.franklinharper.dicewarsport.App
 
+
 class AppActivity : ComponentActivity() {
+
+    private var soundPlayer: AndroidSoundPlayer? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { 
-            App(onThemeChanged = { ThemeChanged(it) }) 
+        val player = AndroidSoundPlayer(this)
+        soundPlayer = player
+        setContent {
+            App(
+                onThemeChanged = { ThemeChanged(it) },
+                soundPlayer = player,
+            )
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        soundPlayer?.release()
+        soundPlayer = null
     }
 }
 
