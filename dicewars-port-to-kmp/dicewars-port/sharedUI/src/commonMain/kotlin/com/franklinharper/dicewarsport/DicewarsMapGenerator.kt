@@ -21,7 +21,6 @@ fun generate(pmax: Int, random: RandomSource, user: Int = 0): DicewarsGame {
         val areaList = MutableList(AREA_MAX) { 0 }
         val players = MutableList(8) { PlayerData() }
         val turnOrder = MutableList(8) { it }
-        val connectedAreaCounts = MutableList(AREA_MAX) { 0 }
     
         // Fisher-Yates shuffle
         for (i in cellMax - 1 downTo 0) {
@@ -299,50 +298,7 @@ fun generate(pmax: Int, random: RandomSource, user: Int = 0): DicewarsGame {
             }
         }
     
-        // setAreaTc for all players
-        fun localSetAreaTc(player: Int) {
-            val localCheck = MutableList(AREA_MAX) { it }
-            while (true) {
-                var changed = false
-                run loop@{
-                    for (i in 1 until AREA_MAX) {
-                        if (areas[i].size == 0 || areas[i].owner != player) continue
-                        for (j in 1 until AREA_MAX) {
-                            if (areas[j].size == 0 || areas[j].owner != player) continue
-                            if (areas[i].adjacentAreas[j] == 0) continue
-                            if (localCheck[j] == localCheck[i]) continue
-                            if (localCheck[i] > localCheck[j]) localCheck[i] = localCheck[j]
-                            else localCheck[j] = localCheck[i]
-                            changed = true
-                            return@loop
-                        }
-                    }
-                }
-                if (!changed) break
-            }
-            for (i in 0 until AREA_MAX) connectedAreaCounts[i] = 0
-            var areaCount = 0
-            var diceCount = 0
-            for (i in 1 until AREA_MAX) {
-                if (areas[i].size == 0 || areas[i].owner != player) continue
-                connectedAreaCounts[localCheck[i]]++
-                areaCount++
-                diceCount += areas[i].dice
-            }
-            var maxConnected = 0
-            for (i in 0 until AREA_MAX) {
-                if (connectedAreaCounts[i] > maxConnected) maxConnected = connectedAreaCounts[i]
-            }
-            players[player] = players[player].copy(
-                areaCount = areaCount,
-                diceCount = diceCount,
-                maxConnectedAreaCount = maxConnected,
-            )
-        }
-    
-        for (player in 0 until pmax) localSetAreaTc(player)
-    
-        return DicewarsGame(
+        var game = DicewarsGame(
             pmax = pmax,
             user = user,
             cells = cells.toList(),
@@ -352,5 +308,9 @@ fun generate(pmax: Int, random: RandomSource, user: Int = 0): DicewarsGame {
             turnOrder = turnOrder.toList(),
             turnIndex = 0,
         )
+        for (player in 0 until pmax) {
+            game = game.setAreaTc(player)
+        }
+        return game
     }
 }
