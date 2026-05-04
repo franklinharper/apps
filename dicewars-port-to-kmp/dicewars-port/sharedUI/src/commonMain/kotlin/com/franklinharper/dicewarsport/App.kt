@@ -245,7 +245,11 @@ fun GameOverScreen(state: GameUiState, onAction: (GameAction) -> Unit) = ScreenS
     onToggleSound = { onAction(GameAction.ToggleSound) },
     onGoToDebug = { onAction(GameAction.GoToDebug) },
 ) {
-    Button(onClick = { onAction(GameAction.BackToTitle) }) { Text("Title") }
+    Spacer(Modifier.weight(1f))
+    Button(
+        onClick = { onAction(GameAction.BackToTitle) },
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text("New Game") }
 }
 
 @Composable
