@@ -2,12 +2,13 @@ package com.franklinharper.dicewarsport.ai
 
 import com.franklinharper.dicewarsport.DicewarsGame
 import com.franklinharper.dicewarsport.RandomSource
+import com.franklinharper.dicewarsport.resolveBattleForSimulation
 
 /**
  * A bot using 3-ply expectiminimax search.
  *
- * 2. **Fast union-find for setAreaTc** — proper O(n·α(n)) union-find replaces
- *    the O(n²) iterative label-merging loop, computed lazily only when needed.
+ * Candidate attacks are filtered using CautiousBot's proven safety rules.
+ * The evaluation function uses a MaxN heuristic: 2×my_strength − sum(all).
  */
 class StrategicBot(private val random: RandomSource) : AiStrategy {
     override val name = "Emperor"
@@ -26,8 +27,8 @@ class StrategicBot(private val random: RandomSource) : AiStrategy {
             val winProb = winProbability(game.areas[move.from].dice, game.areas[move.to].dice)
             if (winProb < 0.15) continue
 
-            val gameAfterWin = game.resolveBattleNoHistory(move.from, move.to, true)
-            val gameAfterLoss = game.resolveBattleNoHistory(move.from, move.to, false)
+            val gameAfterWin = game.resolveBattleForSimulation(move.from, move.to, true)
+            val gameAfterLoss = game.resolveBattleForSimulation(move.from, move.to, false)
 
             val ev = winProb * search(gameAfterWin, player, SEARCH_DEPTH - 1) +
                      (1.0 - winProb) * search(gameAfterLoss, player, SEARCH_DEPTH - 1)
@@ -56,8 +57,8 @@ class StrategicBot(private val random: RandomSource) : AiStrategy {
             val winProb = winProbability(game.areas[move.from].dice, game.areas[move.to].dice)
             if (winProb < 0.15) continue
 
-            val gameAfterWin = game.resolveBattleNoHistory(move.from, move.to, true)
-            val gameAfterLoss = game.resolveBattleNoHistory(move.from, move.to, false)
+            val gameAfterWin = game.resolveBattleForSimulation(move.from, move.to, true)
+            val gameAfterLoss = game.resolveBattleForSimulation(move.from, move.to, false)
 
             val ev = winProb * search(gameAfterWin, player, depth - 1) +
                      (1.0 - winProb) * search(gameAfterLoss, player, depth - 1)
@@ -66,98 +67,6 @@ class StrategicBot(private val random: RandomSource) : AiStrategy {
         }
 
         return bestEv
-    }
-
-    // === Optimization 2: Battle resolution without history ===
-
-    /**
-     * Resolve a battle without appending to the history list.
-     * The history is never used by the AI, so skipping it avoids
-     * O(history_size) list copies at every search node.
-     */
-    private fun DicewarsGame.resolveBattleNoHistory(from: Int, to: Int, success: Boolean): DicewarsGame {
-        val attackerOwner = areas[from].owner
-        val defenderOwner = areas[to].owner
-        val newAreas = areas.toMutableList()
-
-        if (success) {
-            newAreas[to] = newAreas[to].copy(dice = newAreas[from].dice - 1, owner = attackerOwner)
-            newAreas[from] = newAreas[from].copy(dice = 1)
-        } else {
-            newAreas[from] = newAreas[from].copy(dice = 1)
-        }
-
-        var game = copy(areas = newAreas.toList(), history = history)
-        game = game.setAreaTcFast(attackerOwner)
-        if (success) game = game.setAreaTcFast(defenderOwner)
-        return game
-    }
-
-    // === Optimization 3: Fast union-find for setAreaTc ===
-
-    /**
-     * Proper union-find to compute connected components and player stats.
-     * O(n·α(n)) instead of the O(n²) iterative label-merging in setAreaTc.
-     */
-    private fun DicewarsGame.setAreaTcFast(player: Int): DicewarsGame {
-        val parent = IntArray(DicewarsGame.AREA_MAX) { it }
-        val rank = IntArray(DicewarsGame.AREA_MAX) { 0 }
-
-        fun find(x: Int): Int {
-            var root = x
-            while (parent[root] != root) root = parent[root]
-            // Path compression
-            var cur = x
-            while (parent[cur] != root) { val next = parent[cur]; parent[cur] = root; cur = next }
-            return root
-        }
-
-        fun union(a: Int, b: Int) {
-            val ra = find(a); val rb = find(b)
-            if (ra == rb) return
-            if (rank[ra] < rank[rb]) parent[ra] = rb
-            else if (rank[ra] > rank[rb]) parent[rb] = ra
-            else { parent[rb] = ra; rank[ra]++ }
-        }
-
-        // Build adjacency using precomputed neighbor lists where possible,
-        // falling back to adjacentAreas for the initial game state.
-        for (i in 1 until DicewarsGame.AREA_MAX) {
-            val area = areas[i]
-            if (area.size == 0 || area.owner != player) continue
-            val adj = area.adjacentAreas
-            for (j in 1 until DicewarsGame.AREA_MAX) {
-                if (adj[j] == 0) continue
-                val other = areas[j]
-                if (other.size == 0 || other.owner != player) continue
-                union(i, j)
-            }
-        }
-
-        // Count component sizes, area count, dice count
-        val componentSizes = IntArray(DicewarsGame.AREA_MAX) { 0 }
-        var areaCount = 0
-        var diceCount = 0
-        for (i in 1 until DicewarsGame.AREA_MAX) {
-            val area = areas[i]
-            if (area.size == 0 || area.owner != player) continue
-            componentSizes[find(i)]++
-            areaCount++
-            diceCount += area.dice
-        }
-
-        var maxConnected = 0
-        for (size in componentSizes) {
-            if (size > maxConnected) maxConnected = size
-        }
-
-        val newPlayers = players.toMutableList()
-        newPlayers[player] = newPlayers[player].copy(
-            areaCount = areaCount,
-            diceCount = diceCount,
-            maxConnectedAreaCount = maxConnected,
-        )
-        return copy(players = newPlayers.toList())
     }
 
     private fun filteredMoves(game: DicewarsGame, player: Int, neighbors: Array<IntArray>): List<Move> {

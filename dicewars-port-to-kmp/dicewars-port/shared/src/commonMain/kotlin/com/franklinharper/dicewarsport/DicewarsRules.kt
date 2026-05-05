@@ -41,22 +41,47 @@ fun rollBattle(
     )
 }
 
-fun DicewarsGame.resolveBattle(from: Int, to: Int, roll: BattleRoll): DicewarsGame {
+fun DicewarsGame.resolveBattle(from: Int, to: Int, roll: BattleRoll): DicewarsGame =
+    resolveBattleOutcome(
+        from = from,
+        to = to,
+        success = roll.success,
+        historyEntry = HistoryData(from = from, to = to, result = if (roll.success) 1 else 0),
+    )
+
+/**
+ * Resolves a battle outcome for AI/search simulation without appending history.
+ *
+ * This uses the same territory and player-stat update path as [resolveBattle],
+ * but intentionally skips the history append because search trees may evaluate
+ * thousands of hypothetical outcomes that should not be replay-visible actions.
+ */
+fun DicewarsGame.resolveBattleForSimulation(from: Int, to: Int, success: Boolean): DicewarsGame =
+    resolveBattleOutcome(from = from, to = to, success = success, historyEntry = null)
+
+private fun DicewarsGame.resolveBattleOutcome(
+    from: Int,
+    to: Int,
+    success: Boolean,
+    historyEntry: HistoryData?,
+): DicewarsGame {
     val attackerOwner = areas[from].owner
     val defenderOwner = areas[to].owner
     val newAreas = areas.toMutableList()
 
-    if (roll.success) {
+    if (success) {
         newAreas[to] = newAreas[to].copy(dice = newAreas[from].dice - 1, owner = attackerOwner)
         newAreas[from] = newAreas[from].copy(dice = 1)
     } else {
         newAreas[from] = newAreas[from].copy(dice = 1)
     }
 
-    val newHistory = history + HistoryData(from = from, to = to, result = if (roll.success) 1 else 0)
-    var game = copy(areas = newAreas.toList(), history = newHistory)
+    var game = copy(
+        areas = newAreas.toList(),
+        history = if (historyEntry == null) history else history + historyEntry,
+    )
     game = game.setAreaTc(attackerOwner)
-    if (roll.success) game = game.setAreaTc(defenderOwner)
+    if (success) game = game.setAreaTc(defenderOwner)
     return game
 }
 
@@ -106,34 +131,58 @@ fun DicewarsGame.nextPlayer(): DicewarsGame {
 }
 
 fun DicewarsGame.setAreaTc(player: Int): DicewarsGame {
-    val check = MutableList(DicewarsGame.AREA_MAX) { it }
-    while (true) {
-        var changed = false
-        run loop@{
-            for (i in 1 until DicewarsGame.AREA_MAX) {
-                if (areas[i].size == 0 || areas[i].owner != player) continue
-                for (j in 1 until DicewarsGame.AREA_MAX) {
-                    if (areas[j].size == 0 || areas[j].owner != player) continue
-                    if (areas[i].adjacentAreas[j] == 0) continue
-                    if (check[j] == check[i]) continue
-                    if (check[i] > check[j]) check[i] = check[j]
-                    else check[j] = check[i]
-                    changed = true
-                    return@loop
-                }
-            }
+    val parent = IntArray(DicewarsGame.AREA_MAX) { it }
+    val rank = IntArray(DicewarsGame.AREA_MAX) { 0 }
+
+    fun find(x: Int): Int {
+        var root = x
+        while (parent[root] != root) root = parent[root]
+
+        var current = x
+        while (parent[current] != root) {
+            val next = parent[current]
+            parent[current] = root
+            current = next
         }
-        if (!changed) break
+        return root
     }
 
-    val connectedAreaCounts = MutableList(DicewarsGame.AREA_MAX) { 0 }
+    fun union(a: Int, b: Int) {
+        val rootA = find(a)
+        val rootB = find(b)
+        if (rootA == rootB) return
+
+        when {
+            rank[rootA] < rank[rootB] -> parent[rootA] = rootB
+            rank[rootA] > rank[rootB] -> parent[rootB] = rootA
+            else -> {
+                parent[rootB] = rootA
+                rank[rootA]++
+            }
+        }
+    }
+
+    val neighbors = precomputeNeighbors()
+    for (areaId in 1 until DicewarsGame.AREA_MAX) {
+        val area = areas[areaId]
+        if (area.size == 0 || area.owner != player) continue
+
+        for (neighborId in neighbors[areaId]) {
+            val neighbor = areas[neighborId]
+            if (neighbor.size == 0 || neighbor.owner != player) continue
+            union(areaId, neighborId)
+        }
+    }
+
+    val connectedAreaCounts = IntArray(DicewarsGame.AREA_MAX)
     var areaCount = 0
     var diceCount = 0
-    for (i in 1 until DicewarsGame.AREA_MAX) {
-        if (areas[i].size == 0 || areas[i].owner != player) continue
-        connectedAreaCounts[check[i]]++
+    for (areaId in 1 until DicewarsGame.AREA_MAX) {
+        val area = areas[areaId]
+        if (area.size == 0 || area.owner != player) continue
+        connectedAreaCounts[find(areaId)]++
         areaCount++
-        diceCount += areas[i].dice
+        diceCount += area.dice
     }
 
     var maxConnected = 0

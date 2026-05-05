@@ -74,6 +74,22 @@ class DicewarsRulesTest {
     }
 
     @Test
+    fun simulationBattleUsesSameResolutionButDoesNotAppendHistory() {
+        val game = rulesGame(sourceDice = 4, targetDice = 2).copy(
+            history = listOf(HistoryData(from = 9, to = 10, result = 1)),
+        )
+        val roll = BattleRoll(listOf(6), listOf(1), attackerTotal = 6, defenderTotal = 1, success = true)
+
+        val real = game.resolveBattle(from = 1, to = 2, roll = roll)
+        val simulated = game.resolveBattleForSimulation(from = 1, to = 2, success = true)
+
+        assertEquals(real.areas, simulated.areas)
+        assertEquals(real.players, simulated.players)
+        assertEquals(game.history, simulated.history)
+        assertEquals(game.history + HistoryData(from = 1, to = 2, result = 1), real.history)
+    }
+
+    @Test
     fun supplyIsCappedAtStockMaxAndOnlyAffectsOwnedAreasBelowEightDice() {
         val game = rulesGame(sourceDice = 7, targetDice = 7).copy(
             areas = rulesGame(sourceDice = 7, targetDice = 7).areas.toMutableList().also { areas ->
