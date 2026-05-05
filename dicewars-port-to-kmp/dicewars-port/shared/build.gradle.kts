@@ -54,7 +54,7 @@ kotlin {
         .configureEach {
             binaries {
                 framework {
-                    baseName = "SharedUI"
+                    baseName = "Shared"
                     isStatic = true
                 }
             }

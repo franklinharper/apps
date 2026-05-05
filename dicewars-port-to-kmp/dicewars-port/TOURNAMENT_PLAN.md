@@ -521,12 +521,12 @@ Target user command:
 The source hash should include at least:
 
 ```text
-sharedUI/src/commonMain/kotlin/
-sharedUI/src/jvmMain/kotlin/
+shared/src/commonMain/kotlin/
+shared/src/jvmMain/kotlin/
 tournamentCli/src/main/kotlin/
 build.gradle.kts
 settings.gradle.kts
-sharedUI/build.gradle.kts
+shared/build.gradle.kts
 tournamentCli/build.gradle.kts
 gradle/libs.versions.toml
 ```

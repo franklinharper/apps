@@ -8,9 +8,6 @@ import com.franklinharper.dicewarsport.RandomSource
  *
  * 2. **Fast union-find for setAreaTc** — proper O(n·α(n)) union-find replaces
  *    the O(n²) iterative label-merging loop, computed lazily only when needed.
- *
- * Candidate attacks are filtered using CautiousBot's proven safety rules.
- * The evaluation function uses a MaxN heuristic: 2×my_strength − sum(all).
  */
 class StrategicBot(private val random: RandomSource) : AiStrategy {
     override val name = "Emperor"
@@ -162,8 +159,6 @@ class StrategicBot(private val random: RandomSource) : AiStrategy {
         )
         return copy(players = newPlayers.toList())
     }
-
-    // --- Candidate filtering (CautiousBot's rules, using precomputed neighbors) ---
 
     private fun filteredMoves(game: DicewarsGame, player: Int, neighbors: Array<IntArray>): List<Move> {
         val stock = game.players[player].stock

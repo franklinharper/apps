@@ -383,8 +383,8 @@ Copy/adapt renderer files into the new app package.
 Expected destination:
 
 ```text
-sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/presentation/components/MapRenderer.kt
-sharedUI/src/commonMain/kotlin/com/franklinharper/dicewarsport/presentation/components/TerritoryDrawer.kt
+shared/src/commonMain/kotlin/com/franklinharper/dicewarsport/presentation/components/MapRenderer.kt
+shared/src/commonMain/kotlin/com/franklinharper/dicewarsport/presentation/components/TerritoryDrawer.kt
 ```
 
 Domain/render dependencies should live in common source under package `com.franklinharper.dicewarsport`.
@@ -567,7 +567,7 @@ Web/Wasm and iOS are intentionally deferred for the time being. Do not spend imp
 If iOS work is later resumed, identify and run the generated iOS validation task if available, for example:
 
 ```bash
-./gradlew :sharedUI:embedAndSignAppleFrameworkForXcode
+./gradlew :shared:embedAndSignAppleFrameworkForXcode
 ```
 
 If the generated task name differs, record the actual task in `PROGRESS.md`.
