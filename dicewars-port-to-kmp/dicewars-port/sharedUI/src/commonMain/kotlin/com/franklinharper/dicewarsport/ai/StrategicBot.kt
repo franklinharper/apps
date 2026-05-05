@@ -2,19 +2,11 @@ package com.franklinharper.dicewarsport.ai
 
 import com.franklinharper.dicewarsport.DicewarsGame
 import com.franklinharper.dicewarsport.RandomSource
-import com.franklinharper.dicewarsport.isLegalAttack
 
 /**
- * A bot using 3-ply expectiminimax search with three performance optimizations:
+ * A bot using 3-ply expectiminimax search.
  *
- * 1. **Precomputed neighbor lists** — extracted once per chooseMove call from
- *    the sparse adjacentAreas array, avoiding repeated 32-wide scans.
- *
- * 2. **No-history battle resolution** — uses resolveBattleNoHistory() which
- *    skips the growing history list, avoiding O(history_size) copies at every
- *    search node.
- *
- * 3. **Fast union-find for setAreaTc** — proper O(n·α(n)) union-find replaces
+ * 2. **Fast union-find for setAreaTc** — proper O(n·α(n)) union-find replaces
  *    the O(n²) iterative label-merging loop, computed lazily only when needed.
  *
  * Candidate attacks are filtered using CautiousBot's proven safety rules.
