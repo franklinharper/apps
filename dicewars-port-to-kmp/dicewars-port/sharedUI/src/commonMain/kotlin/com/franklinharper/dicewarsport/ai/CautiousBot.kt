@@ -4,6 +4,8 @@ import com.franklinharper.dicewarsport.DicewarsGame
 import com.franklinharper.dicewarsport.isLegalAttack
 
 class CautiousBot : AiStrategy {
+    override val name = "Turtle"
+
     override fun chooseMove(game: DicewarsGame): Move? {
         val currentPlayer = game.currentPlayer()
         val areaInfo = List(DicewarsGame.AREA_MAX) { areaId -> analyzeArea(game, areaId) }

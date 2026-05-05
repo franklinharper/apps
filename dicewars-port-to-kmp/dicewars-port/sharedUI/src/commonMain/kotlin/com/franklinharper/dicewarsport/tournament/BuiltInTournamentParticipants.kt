@@ -8,25 +8,25 @@ import com.franklinharper.dicewarsport.ai.TargetTheLeader
 object BuiltInTournamentParticipants {
     val attackWhenStronger = TournamentParticipant(
         id = "attack-when-stronger",
-        displayName = "Always Attack When Stronger Bot",
+        displayName = "Berzerker",
         aiFactory = { random -> AlwaysAttackWhenStrongerBot(random) },
     )
 
     val targetLeader = TournamentParticipant(
         id = "target-leader",
-        displayName = "Target The Leader",
+        displayName = "Rebel",
         aiFactory = { random -> TargetTheLeader(random) },
     )
 
     val cautious = TournamentParticipant(
         id = "cautious",
-        displayName = "Cautious Bot",
+        displayName = "Turtle",
         aiFactory = { CautiousBot() },
     )
 
     val strategic = TournamentParticipant(
         id = "strategic",
-        displayName = "Strategic Bot",
+        displayName = "Emperor",
         aiFactory = { random -> StrategicBot(random) },
     )
 

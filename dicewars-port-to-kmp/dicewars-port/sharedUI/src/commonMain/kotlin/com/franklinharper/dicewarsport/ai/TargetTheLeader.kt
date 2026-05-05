@@ -4,6 +4,8 @@ import com.franklinharper.dicewarsport.DicewarsGame
 import com.franklinharper.dicewarsport.RandomSource
 
 class TargetTheLeader(private val random: RandomSource) : AiStrategy {
+    override val name = "Rebel"
+
     override fun chooseMove(game: DicewarsGame): Move? {
         val areaCounts = MutableList(8) { 0 }
         val diceCounts = MutableList(8) { 0 }

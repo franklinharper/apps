@@ -9,13 +9,13 @@ class GameReducer(
     private val playerNames: Map<Int, String> = emptyMap(),
     private val debugPreferences: DebugPreferences = NoOpDebugPreferences(),
 ) {
-    private fun playerNamesFor(pmax: Int): Map<Int, String> {
+    private fun playerNamesFor(game: DicewarsGame, spectateMode: Boolean): Map<Int, String> {
         val names = mutableMapOf<Int, String>()
-        for (p in 0 until pmax) {
-            names[p] = playerNames[p] ?: if (aiStrategies.containsKey(p)) {
-                aiStrategies[p]!!.name
-            } else {
-                "Human"
+        for (p in 0 until game.pmax) {
+            names[p] = playerNames[p] ?: when {
+                !spectateMode && p == game.user -> "Human"
+                aiStrategies.containsKey(p) -> aiStrategies[p]!!.name
+                else -> TargetTheLeader(random).name
             }
         }
         return names
@@ -42,11 +42,11 @@ class GameReducer(
         )
         GameAction.StartPressed -> {
             val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
-            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, playerNames = playerNamesFor(newGame.pmax)))
+            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, playerNames = playerNamesFor(newGame, spectateMode = false)))
         }
         GameAction.StartSpectate -> {
             val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
-            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, spectateMode = true, playerNames = playerNamesFor(newGame.pmax)))
+            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, spectateMode = true, playerNames = playerNamesFor(newGame, spectateMode = true)))
         }
         GameAction.AcceptMap -> {
             val newScreen = turnScreenFor(state.game, state.spectateMode)

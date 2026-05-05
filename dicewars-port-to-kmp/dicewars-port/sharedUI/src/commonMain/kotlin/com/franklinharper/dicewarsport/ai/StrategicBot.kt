@@ -1,6 +1,5 @@
 package com.franklinharper.dicewarsport.ai
 
-import com.franklinharper.dicewarsport.BattleRoll
 import com.franklinharper.dicewarsport.DicewarsGame
 import com.franklinharper.dicewarsport.RandomSource
 import com.franklinharper.dicewarsport.isLegalAttack
@@ -22,6 +21,7 @@ import com.franklinharper.dicewarsport.isLegalAttack
  * The evaluation function uses a MaxN heuristic: 2×my_strength − sum(all).
  */
 class StrategicBot(private val random: RandomSource) : AiStrategy {
+    override val name = "Emperor"
 
     override fun chooseMove(game: DicewarsGame): Move? {
         val player = game.currentPlayer()
