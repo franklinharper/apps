@@ -6,6 +6,7 @@ import com.franklinharper.dicewarsport.RandomSource
 data class Move(val from: Int, val to: Int)
 
 interface AiStrategy {
+    val name: String get() = this::class.simpleName ?: "Unknown"
     fun chooseMove(game: DicewarsGame): Move?
 }
 

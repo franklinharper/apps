@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.franklinharper.dicewarsport.*
 import com.franklinharper.dicewarsport.presentation.components.MapRenderer
@@ -43,13 +45,7 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
     onGoToDebug = { onAction(GameAction.GoToDebug) },
 ) {
     Board(state, onAction)
-    Text(
-        text = "Reinforcements",
-        style = MaterialTheme.typography.titleSmall,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    PlayerStatusBar(state.game)
+    PlayerStatusBar(state)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -60,6 +56,8 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
                 text = "1. Click your area. 2. Click neighbor to attack.",
                 style = MaterialTheme.typography.bodyMedium,
             )
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = { onAction(GameAction.EndTurn) }) { Text("End turn") }
         } else {
             LaunchedEffect(state.game) {
                 delay(300)
@@ -75,62 +73,61 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
             Text("bot's turn")
         }
     }
-    if (state.screen == DicewarsScreen.HumanTurn) {
-        Button(onClick = { onAction(GameAction.EndTurn) }) { Text("End turn") }
-    }
 }
 
 @Composable
-private fun PlayerStatusBar(game: DicewarsGame) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+private fun PlayerStatusBar(state: GameUiState) {
+    val game = state.game
+    Column(modifier = Modifier.fillMaxWidth()) {
         for (player in game.turnOrder.take(game.pmax)) {
             val isCurrentPlayer = player == game.currentPlayer()
-            Column(
+            val isEliminated = game.players[player].maxConnectedAreaCount == 0
+            val playerName = state.playerNames[player] ?: "Player $player"
+            val supply = game.players[player].maxConnectedAreaCount
+
+            val textColor = when {
+                isEliminated -> MaterialTheme.colorScheme.outline
+                isCurrentPlayer -> MaterialTheme.colorScheme.onPrimaryContainer
+                else -> MaterialTheme.colorScheme.onBackground
+            }
+            val bgColor = when {
+                isEliminated -> MaterialTheme.colorScheme.background
+                isCurrentPlayer -> MaterialTheme.colorScheme.primaryContainer
+                else -> MaterialTheme.colorScheme.background
+            }
+
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (isCurrentPlayer) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.background
-                        },
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(bgColor)
+                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(GameColors.getPlayerColor(player)),
-                    )
-                    Text(
-                        text = "${game.players[player].maxConnectedAreaCount}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (isCurrentPlayer) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onBackground
-                        },
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isEliminated) MaterialTheme.colorScheme.outlineVariant
+                            else GameColors.getPlayerColor(player)
+                        ),
+                )
+                Spacer(Modifier.size(6.dp))
                 Text(
-                    text = if (game.players[player].stock > 0) "${game.players[player].stock}" else "",
+                    text = playerName,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isCurrentPlayer) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onBackground
-                    },
-                    minLines = 1,
+                    color = textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = if (isEliminated) "✕" else "$supply",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textColor,
+                    modifier = Modifier.width(24.dp),
+                    textAlign = TextAlign.End,
                 )
             }
         }

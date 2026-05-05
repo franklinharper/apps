@@ -6,8 +6,21 @@ import com.franklinharper.dicewarsport.ai.TargetTheLeader
 class GameReducer(
     private val random: RandomSource,
     private val aiStrategies: Map<Int, AiStrategy> = emptyMap(),
+    private val playerNames: Map<Int, String> = emptyMap(),
     private val debugPreferences: DebugPreferences = NoOpDebugPreferences(),
 ) {
+    private fun playerNamesFor(pmax: Int): Map<Int, String> {
+        val names = mutableMapOf<Int, String>()
+        for (p in 0 until pmax) {
+            names[p] = playerNames[p] ?: if (aiStrategies.containsKey(p)) {
+                aiStrategies[p]!!.name
+            } else {
+                "Human"
+            }
+        }
+        return names
+    }
+
     companion object {
         private const val TAP_THRESHOLD = 5
         private const val TAP_WINDOW_MS = 3000L
@@ -29,11 +42,11 @@ class GameReducer(
         )
         GameAction.StartPressed -> {
             val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
-            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview))
+            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, playerNames = playerNamesFor(newGame.pmax)))
         }
         GameAction.StartSpectate -> {
             val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
-            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, spectateMode = true))
+            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, spectateMode = true, playerNames = playerNamesFor(newGame.pmax)))
         }
         GameAction.AcceptMap -> {
             val newScreen = turnScreenFor(state.game, state.spectateMode)

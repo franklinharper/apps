@@ -11,4 +11,5 @@ data class GameUiState(
     val debugMode: Boolean = false,
     val titleTapCount: Int = 0,
     val titleTapTimestamp: Long = 0L,
+    val playerNames: Map<Int, String> = emptyMap(),
 )
