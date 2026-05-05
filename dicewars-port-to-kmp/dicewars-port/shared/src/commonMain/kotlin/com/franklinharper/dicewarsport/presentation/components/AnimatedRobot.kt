@@ -70,6 +70,15 @@ fun AnimatedRobot(modifier: Modifier = Modifier) {
         label = "starTime",
     )
 
+    val heartPulse by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = LinearEasing),
+        ),
+        label = "heartPulse",
+    )
+
     // Entrance
     var visible by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) { visible = true }
@@ -91,7 +100,7 @@ fun AnimatedRobot(modifier: Modifier = Modifier) {
     val starSeeds = remember {
         List(12) { i ->
             StarSeed(
-                angle = (i * 30f + 15f) * (Math.PI / 180f).toFloat(),
+                angle = (i * 30f + 15f) * (kotlin.math.PI / 180f).toFloat(),
                 speed = 0.6f + (i % 3) * 0.2f,
                 delay = (i % 4) * 0.08f,
                 colorIndex = i % 5,
@@ -131,9 +140,9 @@ fun AnimatedRobot(modifier: Modifier = Modifier) {
         val rightArmPivotY = bodyTop + s(15)
         // Fist is at end of arm rotated by fistPumpAngle
         val armLen = s(60)
-        val fistAngleRad = (fistPumpAngle - 90f) * (Math.PI / 180f).toFloat() // -90 so 0 = pointing right
+        val fistAngleRad = (fistPumpAngle - 90f) * (kotlin.math.PI / 180f).toFloat() // -90 so 0 = pointing right
         // Actually the arm rotates around pivot, so fist position:
-        val fistDirRad = fistPumpAngle * (Math.PI / 180f).toFloat()
+        val fistDirRad = fistPumpAngle * (kotlin.math.PI / 180f).toFloat()
         val fistX = rightArmPivotX + armLen * kotlin.math.sin(fistDirRad) // negative angle = left
         val fistY = rightArmPivotY - armLen * kotlin.math.cos(fistDirRad) // negative = up
 
@@ -245,7 +254,7 @@ fun AnimatedRobot(modifier: Modifier = Modifier) {
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(s(8)),
         )
         // Panel light
-        val heartAlpha = 0.5f + 0.5f * kotlin.math.sin(System.currentTimeMillis() / 300.0).toFloat()
+        val heartAlpha = 0.5f + 0.5f * kotlin.math.sin(heartPulse * 2f * kotlin.math.PI.toFloat())
         drawCircle(
             color = accentColor.copy(alpha = heartAlpha),
             radius = s(8),

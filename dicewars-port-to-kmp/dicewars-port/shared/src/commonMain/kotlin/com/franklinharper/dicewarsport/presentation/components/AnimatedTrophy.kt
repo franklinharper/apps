@@ -52,10 +52,10 @@ fun AnimatedTrophy(modifier: Modifier = Modifier) {
         label = "sparkleRotation",
     )
 
-    val sparklePhases = remember { List(8) { it * (Math.PI.toFloat() / 4f) } }
+    val sparklePhases = remember { List(8) { it * (kotlin.math.PI.toFloat() / 4f) } }
     val twinkleTime by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
+        targetValue = (2 * kotlin.math.PI).toFloat(),
         animationSpec = infiniteRepeatable(
             animation = tween(2000, easing = LinearEasing),
         ),
@@ -221,12 +221,12 @@ fun AnimatedTrophy(modifier: Modifier = Modifier) {
             val starInner = w * 0.04f
             val starPath = Path().apply {
                 for (i in 0 until 5) {
-                    val outerAngle = Math.toRadians((-90.0 + i * 72.0))
-                    val innerAngle = Math.toRadians((-90.0 + 36.0 + i * 72.0))
-                    val ox = starCx + starOuter * kotlin.math.cos(outerAngle.toFloat())
-                    val oy = starCy + starOuter * kotlin.math.sin(outerAngle.toFloat())
-                    val ix = starCx + starInner * kotlin.math.cos(innerAngle.toFloat())
-                    val iy = starCy + starInner * kotlin.math.sin(innerAngle.toFloat())
+                    val outerAngle = (-90f + i * 72f) * (kotlin.math.PI.toFloat() / 180f)
+                    val innerAngle = (-90f + 36f + i * 72f) * (kotlin.math.PI.toFloat() / 180f)
+                    val ox = starCx + starOuter * kotlin.math.cos(outerAngle)
+                    val oy = starCy + starOuter * kotlin.math.sin(outerAngle)
+                    val ix = starCx + starInner * kotlin.math.cos(innerAngle)
+                    val iy = starCy + starInner * kotlin.math.sin(innerAngle)
                     if (i == 0) moveTo(ox, oy) else lineTo(ox, oy)
                     lineTo(ix, iy)
                 }

@@ -139,7 +139,7 @@ class TournamentRunnerTest {
     @Test
     fun builtInParticipantsAreAvailableById() {
         assertEquals(
-            setOf("target-leader", "cautious", "attack-when-stronger", "strategic"),
+            BuiltInTournamentParticipants.all.map { it.id }.toSet(),
             BuiltInTournamentParticipants.byId.keys,
         )
     }

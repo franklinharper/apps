@@ -5,6 +5,7 @@ import com.franklinharper.dicewarsport.ai.AlwaysAttackWhenStrongerBot
 import com.franklinharper.dicewarsport.ai.CautiousBot
 import com.franklinharper.dicewarsport.ai.StrategicBot
 import com.franklinharper.dicewarsport.ai.TargetTheLeader
+import kotlin.time.Clock
 
 class GameReducer(
     private val random: RandomSource,
@@ -208,7 +209,7 @@ class GameReducer(
         if (!spectateMode && game.currentPlayer() == game.user) DicewarsScreen.HumanTurn else DicewarsScreen.AiTurn
 
     private fun onTitleTapped(state: GameUiState): Result {
-        val now = System.currentTimeMillis()
+        val now = Clock.System.now().toEpochMilliseconds()
         val withinWindow = (now - state.titleTapTimestamp) < TAP_WINDOW_MS
         val newCount = if (withinWindow) state.titleTapCount + 1 else 1
         val newDebugMode = if (newCount >= TAP_THRESHOLD) !state.debugMode else state.debugMode

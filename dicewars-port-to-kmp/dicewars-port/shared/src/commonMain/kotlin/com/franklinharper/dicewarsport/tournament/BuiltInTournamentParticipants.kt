@@ -2,6 +2,7 @@ package com.franklinharper.dicewarsport.tournament
 
 import com.franklinharper.dicewarsport.ai.AlwaysAttackWhenStrongerBot
 import com.franklinharper.dicewarsport.ai.CautiousBot
+import com.franklinharper.dicewarsport.ai.FrontierCommanderBot
 import com.franklinharper.dicewarsport.ai.StrategicBot
 import com.franklinharper.dicewarsport.ai.TargetTheLeader
 
@@ -30,7 +31,13 @@ object BuiltInTournamentParticipants {
         aiFactory = { random -> StrategicBot(random) },
     )
 
-    val all: List<TournamentParticipant> = listOf(targetLeader, cautious, attackWhenStronger, strategic)
+    val frontierCommander = TournamentParticipant(
+        id = "frontier-commander",
+        displayName = "Frontier Commander",
+        aiFactory = { FrontierCommanderBot() },
+    )
+
+    val all: List<TournamentParticipant> = listOf(targetLeader, cautious, attackWhenStronger, strategic, frontierCommander)
 
     val byId: Map<String, TournamentParticipant> = all.associateBy { it.id }
 }
