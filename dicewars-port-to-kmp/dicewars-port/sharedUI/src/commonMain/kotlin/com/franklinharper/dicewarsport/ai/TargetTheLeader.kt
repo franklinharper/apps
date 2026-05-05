@@ -29,6 +29,7 @@ class TargetTheLeader(private val random: RandomSource) : AiStrategy {
         }
 
         val currentPlayer = game.currentPlayer()
+        val neighbors = game.precomputeNeighbors()
         val moves = mutableListOf<Move>()
 
         for (from in 1 until DicewarsGame.AREA_MAX) {
@@ -37,11 +38,10 @@ class TargetTheLeader(private val random: RandomSource) : AiStrategy {
             if (attacker.owner != currentPlayer) continue
             if (attacker.dice <= 1) continue
 
-            for (to in 1 until DicewarsGame.AREA_MAX) {
+            for (to in neighbors[from]) {
                 val defender = game.areas[to]
                 if (defender.size == 0) continue
                 if (defender.owner == currentPlayer) continue
-                if (attacker.adjacentAreas[to] == 0) continue
                 if (topPlayer >= 0 && attacker.owner != topPlayer && defender.owner != topPlayer) continue
                 if (defender.dice > attacker.dice) continue
                 if (defender.dice == attacker.dice) {

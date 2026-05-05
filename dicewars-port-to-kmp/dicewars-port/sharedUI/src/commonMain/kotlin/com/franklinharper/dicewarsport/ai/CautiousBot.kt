@@ -8,7 +8,8 @@ class CautiousBot : AiStrategy {
 
     override fun chooseMove(game: DicewarsGame): Move? {
         val currentPlayer = game.currentPlayer()
-        val areaInfo = List(DicewarsGame.AREA_MAX) { areaId -> analyzeArea(game, areaId) }
+        val neighbors = game.precomputeNeighbors()
+        val areaInfo = List(DicewarsGame.AREA_MAX) { areaId -> analyzeArea(game, areaId, neighbors) }
         var bestMove: Move? = null
 
         for (defenderId in 1 until DicewarsGame.AREA_MAX) {
@@ -20,7 +21,7 @@ class CautiousBot : AiStrategy {
                 val attacker = game.areas[attackerId]
                 if (attacker.size == 0) continue
                 if (attacker.owner != currentPlayer) continue
-                if (attacker.adjacentAreas[defenderId] == 0 && defender.adjacentAreas[attackerId] == 0) continue
+                if (!neighbors[attackerId].contains(defenderId) && !neighbors[defenderId].contains(attackerId)) continue
                 if (!game.isLegalAttack(attackerId, defenderId, currentPlayer)) continue
 
                 if (defender.dice >= attacker.dice && attacker.dice != DicewarsGame.MAX_DICE) continue
@@ -54,7 +55,7 @@ class CautiousBot : AiStrategy {
         return bestMove
     }
 
-    private fun analyzeArea(game: DicewarsGame, areaId: Int): AreaInfo {
+    private fun analyzeArea(game: DicewarsGame, areaId: Int, neighbors: Array<IntArray>): AreaInfo {
         var friendlyNeighbors = 0
         var unfriendlyNeighbors = 0
         var highestFriendlyNeighborDice = 0
@@ -62,9 +63,7 @@ class CautiousBot : AiStrategy {
         var secondHighestUnfriendlyNeighborDice = 0
         val area = game.areas[areaId]
 
-        for (neighborId in 1 until DicewarsGame.AREA_MAX) {
-            if (neighborId == areaId) continue
-            if (area.adjacentAreas[neighborId] == 0) continue
+        for (neighborId in neighbors[areaId]) {
             val neighbor = game.areas[neighborId]
             if (neighbor.size == 0) continue
             val dice = neighbor.dice

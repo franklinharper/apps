@@ -25,7 +25,7 @@ class StrategicBot(private val random: RandomSource) : AiStrategy {
 
     override fun chooseMove(game: DicewarsGame): Move? {
         val player = game.currentPlayer()
-        val neighbors = precomputeNeighbors(game)
+        val neighbors = game.precomputeNeighbors()
         val candidates = filteredMoves(game, player, neighbors)
         if (candidates.isEmpty()) return null
 
@@ -56,7 +56,7 @@ class StrategicBot(private val random: RandomSource) : AiStrategy {
         if (depth <= 0) return evaluate(game, player)
         if (game.players[player].maxConnectedAreaCount == 0) return EVAL_ELIMINATED
 
-        val neighbors = precomputeNeighbors(game)
+        val neighbors = game.precomputeNeighbors()
         val candidates = filteredMoves(game, player, neighbors)
         if (candidates.isEmpty()) return evaluate(game, player)
 
@@ -77,28 +77,6 @@ class StrategicBot(private val random: RandomSource) : AiStrategy {
         }
 
         return bestEv
-    }
-
-    // === Optimization 1: Precomputed neighbor lists ===
-
-    /**
-     * For each area, extract the non-zero entries from adjacentAreas into a
-     * compact IntArray. Called once per chooseMove/search call.
-     */
-    private fun precomputeNeighbors(game: DicewarsGame): Array<IntArray> {
-        val result = Array(DicewarsGame.AREA_MAX) { IntArray(0) }
-        for (areaId in 1 until DicewarsGame.AREA_MAX) {
-            val adj = game.areas[areaId].adjacentAreas
-            val count = adj.count { it != 0 }
-            if (count == 0) continue
-            val list = IntArray(count)
-            var idx = 0
-            for (n in 1 until DicewarsGame.AREA_MAX) {
-                if (adj[n] != 0) list[idx++] = n
-            }
-            result[areaId] = list
-        }
-        return result
     }
 
     // === Optimization 2: Battle resolution without history ===

@@ -36,6 +36,18 @@ class GameUiReducerTest {
     }
 
     @Test
+    fun startAssignsNamesToHumanAndAiPlayers() {
+        val reducer = reducer(aiStrategies = emptyMap())
+        val selected = reducer.reduce(initialUiState(screen = DicewarsScreen.Title), GameAction.SelectPlayerCount(4))
+        val started = reducer.reduce(selected.state, GameAction.StartPressed)
+
+        assertEquals("Human", started.state.playerNames[0])
+        assertEquals("Rebel", started.state.playerNames[1])
+        assertEquals("Rebel", started.state.playerNames[2])
+        assertEquals("Rebel", started.state.playerNames[3])
+    }
+
+    @Test
     fun mapPreviewTransitionsToHumanOrAiTurn() {
         val human = reducer().reduce(previewState(user = 0, currentPlayer = 0), GameAction.AcceptMap)
         val ai = reducer().reduce(previewState(user = 0, currentPlayer = 1), GameAction.AcceptMap)
@@ -176,9 +188,12 @@ private fun adj(vararg ids: Int): List<Int> {
     return list
 }
 
-private fun reducer(ai: AiStrategy = FixedMoveAi(null)): GameReducer = GameReducer(
+private fun reducer(
+    ai: AiStrategy = FixedMoveAi(null),
+    aiStrategies: Map<Int, AiStrategy> = mapOf(1 to ai),
+): GameReducer = GameReducer(
     random = UiFixedRandom(),
-    aiStrategies = mapOf(1 to ai),
+    aiStrategies = aiStrategies,
     debugPreferences = object : DebugPreferences {
         private var mode = false
         override fun isDebugMode(): Boolean = mode

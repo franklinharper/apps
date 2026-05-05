@@ -47,4 +47,33 @@ data class DicewarsGame(
     }
 
     fun currentPlayer(): Int = turnOrder[turnIndex]
+
+    /**
+     * Returns compact neighbor lists for each area.
+     *
+     * Area adjacency is stored as a dense AREA_MAX-sized marker list because it
+     * mirrors the original game's data model. Most game logic only needs the
+     * actual adjacent area IDs, so this helper converts the dense markers into
+     * small IntArrays. Bots can compute this once per move decision and then
+     * iterate only real neighbors instead of scanning every possible area.
+     */
+    fun precomputeNeighbors(): Array<IntArray> {
+        val result = Array(AREA_MAX) { IntArray(0) }
+        for (areaId in 1 until AREA_MAX) {
+            val adjacentAreas = areas[areaId].adjacentAreas
+            var count = 0
+            for (neighborId in 1 until AREA_MAX) {
+                if (adjacentAreas[neighborId] != 0) count++
+            }
+            if (count == 0) continue
+
+            val neighbors = IntArray(count)
+            var index = 0
+            for (neighborId in 1 until AREA_MAX) {
+                if (adjacentAreas[neighborId] != 0) neighbors[index++] = neighborId
+            }
+            result[areaId] = neighbors
+        }
+        return result
+    }
 }

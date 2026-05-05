@@ -1,6 +1,9 @@
 package com.franklinharper.dicewarsport
 
 import com.franklinharper.dicewarsport.ai.AiStrategy
+import com.franklinharper.dicewarsport.ai.AlwaysAttackWhenStrongerBot
+import com.franklinharper.dicewarsport.ai.CautiousBot
+import com.franklinharper.dicewarsport.ai.StrategicBot
 import com.franklinharper.dicewarsport.ai.TargetTheLeader
 
 class GameReducer(
@@ -9,13 +12,32 @@ class GameReducer(
     private val playerNames: Map<Int, String> = emptyMap(),
     private val debugPreferences: DebugPreferences = NoOpDebugPreferences(),
 ) {
-    private fun playerNamesFor(game: DicewarsGame, spectateMode: Boolean): Map<Int, String> {
+    private var activeAiStrategies: Map<Int, AiStrategy> = aiStrategies
+
+    private val availableAiFactories: List<(RandomSource) -> AiStrategy> = listOf(
+        { rng -> TargetTheLeader(rng) },
+        { CautiousBot() },
+        { rng -> AlwaysAttackWhenStrongerBot(rng) },
+        { rng -> StrategicBot(rng) },
+    )
+
+    private fun assignAiStrategiesFor(game: DicewarsGame, spectateMode: Boolean): Map<Int, AiStrategy> {
+        val assigned = mutableMapOf<Int, AiStrategy>()
+        for (p in 0 until game.pmax) {
+            if (!spectateMode && p == game.user) continue
+            assigned[p] = aiStrategies[p] ?: availableAiFactories[random.nextInt(availableAiFactories.size)](random)
+        }
+        activeAiStrategies = assigned
+        return assigned
+    }
+
+    private fun playerNamesFor(game: DicewarsGame, spectateMode: Boolean, assignedAiStrategies: Map<Int, AiStrategy>): Map<Int, String> {
         val names = mutableMapOf<Int, String>()
         for (p in 0 until game.pmax) {
             names[p] = playerNames[p] ?: when {
                 !spectateMode && p == game.user -> "Human"
-                aiStrategies.containsKey(p) -> aiStrategies[p]!!.name
-                else -> TargetTheLeader(random).name
+                assignedAiStrategies.containsKey(p) -> assignedAiStrategies[p]!!.name
+                else -> "Human"
             }
         }
         return names
@@ -42,11 +64,13 @@ class GameReducer(
         )
         GameAction.StartPressed -> {
             val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
-            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, playerNames = playerNamesFor(newGame, spectateMode = false)))
+            val assignedAiStrategies = assignAiStrategiesFor(newGame, spectateMode = false)
+            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, playerNames = playerNamesFor(newGame, spectateMode = false, assignedAiStrategies)))
         }
         GameAction.StartSpectate -> {
             val newGame = DicewarsGame.generate(state.selectedPlayerCount, random)
-            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, spectateMode = true, playerNames = playerNamesFor(newGame, spectateMode = true)))
+            val assignedAiStrategies = assignAiStrategiesFor(newGame, spectateMode = true)
+            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, spectateMode = true, playerNames = playerNamesFor(newGame, spectateMode = true, assignedAiStrategies)))
         }
         GameAction.AcceptMap -> {
             val newScreen = turnScreenFor(state.game, state.spectateMode)
@@ -54,7 +78,8 @@ class GameReducer(
         }
         GameAction.RejectMap -> {
             val newGame = DicewarsGame.generate(state.game.pmax, random)
-            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview))
+            val assignedAiStrategies = assignAiStrategiesFor(newGame, state.spectateMode)
+            Result(state.copy(game = newGame, screen = DicewarsScreen.MapPreview, playerNames = playerNamesFor(newGame, state.spectateMode, assignedAiStrategies)))
         }
         is GameAction.TerritoryClicked -> onTerritoryClicked(state, action.territoryId)
         GameAction.EndTurn -> onTurnFinished(state)
@@ -118,7 +143,7 @@ class GameReducer(
     private fun onAiStep(state: GameUiState): Result {
         if (state.screen != DicewarsScreen.AiTurn) return Result(state)
         val player = state.game.currentPlayer()
-        val strategy = aiStrategies[player] ?: TargetTheLeader(random)
+        val strategy = activeAiStrategies[player] ?: aiStrategies[player] ?: TargetTheLeader(random)
         val move = strategy.chooseMove(state.game) ?: return onTurnFinished(state)
         if (!state.game.isLegalAttack(move.from, move.to, player)) return onTurnFinished(state)
 
@@ -204,8 +229,15 @@ class GameReducer(
             DicewarsScreen.HumanTurn, DicewarsScreen.AiTurn,
         )
         val game = if (needsGame) DicewarsGame.generate(state.selectedPlayerCount, random) else state.game
+        val assignedAiStrategies = if (needsGame) assignAiStrategiesFor(game, state.spectateMode) else activeAiStrategies
         return Result(
-            state.copy(screen = targetScreen, game = game, selectedFrom = null, selectedTo = null),
+            state.copy(
+                screen = targetScreen,
+                game = game,
+                selectedFrom = null,
+                selectedTo = null,
+                playerNames = if (needsGame) playerNamesFor(game, state.spectateMode, assignedAiStrategies) else state.playerNames,
+            ),
             targetScreen.soundEvents,
         )
     }

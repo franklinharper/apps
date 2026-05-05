@@ -8,6 +8,7 @@ class AlwaysAttackWhenStrongerBot(private val random: RandomSource) : AiStrategy
 
     override fun chooseMove(game: DicewarsGame): Move? {
         val player = game.currentPlayer()
+        val neighbors = game.precomputeNeighbors()
         val moves = mutableListOf<Move>()
 
         for (from in 1 until DicewarsGame.AREA_MAX) {
@@ -16,11 +17,10 @@ class AlwaysAttackWhenStrongerBot(private val random: RandomSource) : AiStrategy
             if (attacker.owner != player) continue
             if (attacker.dice <= 1) continue
 
-            for (to in 1 until DicewarsGame.AREA_MAX) {
+            for (to in neighbors[from]) {
                 val defender = game.areas[to]
                 if (defender.size == 0) continue
                 if (defender.owner == player) continue
-                if (attacker.adjacentAreas[to] == 0) continue
                 if (defender.dice >= attacker.dice) continue
                 moves.add(Move(from, to))
             }
