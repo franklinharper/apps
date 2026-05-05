@@ -345,7 +345,7 @@ fun AnimatedRobot(modifier: Modifier = Modifier) {
         // Big open smile
         val smilePath = Path().apply {
             moveTo(cx - s(18), headCenterY + s(8))
-            quadraticBezierTo(cx, headCenterY + s(26), cx + s(18), headCenterY + s(8))
+            quadraticTo(cx, headCenterY + s(26), cx + s(18), headCenterY + s(8))
             close()
         }
         drawPath(smilePath, eyeColor)

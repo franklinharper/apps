@@ -150,7 +150,7 @@ fun AnimatedTrophy(modifier: Modifier = Modifier) {
                 lineTo(cupRightTop, cupTop)
                 lineTo(cupRightBottom, cupBottom)
                 // Rounded bottom
-                quadraticBezierTo(cx, cupBottom + h * 0.06f, cupLeftBottom, cupBottom)
+                quadraticTo(cx, cupBottom + h * 0.06f, cupLeftBottom, cupBottom)
                 close()
             }
             drawPath(cupPath, gold)
@@ -160,7 +160,7 @@ fun AnimatedTrophy(modifier: Modifier = Modifier) {
                 moveTo(cupLeftTop + w * 0.06f, cupTop)
                 lineTo(cupLeftTop + w * 0.14f, cupTop)
                 lineTo(cupLeftBottom + w * 0.06f, cupBottom - h * 0.04f)
-                quadraticBezierTo(cx - w * 0.15f, cupBottom + h * 0.02f, cupLeftBottom + w * 0.02f, cupBottom - h * 0.02f)
+                quadraticTo(cx - w * 0.15f, cupBottom + h * 0.02f, cupLeftBottom + w * 0.02f, cupBottom - h * 0.02f)
                 close()
             }
             drawPath(highlightPath, goldLight)
@@ -170,7 +170,7 @@ fun AnimatedTrophy(modifier: Modifier = Modifier) {
                 moveTo(cupRightTop - w * 0.1f, cupTop)
                 lineTo(cupRightTop, cupTop)
                 lineTo(cupRightBottom, cupBottom)
-                quadraticBezierTo(cx + w * 0.05f, cupBottom + h * 0.04f, cx + w * 0.08f, cupBottom - h * 0.02f)
+                quadraticTo(cx + w * 0.05f, cupBottom + h * 0.04f, cx + w * 0.08f, cupBottom - h * 0.02f)
                 close()
             }
             drawPath(shadowPath, goldDark)

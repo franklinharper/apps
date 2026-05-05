@@ -53,7 +53,7 @@ fun GameBoardScreen(state: GameUiState, onAction: (GameAction) -> Unit, title: S
     ) {
         if (state.screen == DicewarsScreen.HumanTurn) {
             Text(
-                text = "1. Click your area. 2. Click neighbor to attack.",
+                text = "1. Click your area.\n2. Click neighbor to attack.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.width(8.dp))
@@ -84,6 +84,7 @@ private fun PlayerStatusBar(state: GameUiState) {
             val isEliminated = game.players[player].maxConnectedAreaCount == 0
             val playerName = state.playerNames[player] ?: "Player $player"
             val supply = game.players[player].maxConnectedAreaCount
+            val stock = game.players[player].stock
 
             val textColor = when {
                 isEliminated -> MaterialTheme.colorScheme.outline
@@ -116,17 +117,17 @@ private fun PlayerStatusBar(state: GameUiState) {
                 Spacer(Modifier.size(6.dp))
                 Text(
                     text = playerName,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = textColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = if (isEliminated) "✕" else "$supply",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = if (isEliminated) "✕" else if (stock > 0) "$supply+$stock" else "$supply",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = textColor,
-                    modifier = Modifier.width(24.dp),
+                    modifier = Modifier.width(48.dp),
                     textAlign = TextAlign.End,
                 )
             }
